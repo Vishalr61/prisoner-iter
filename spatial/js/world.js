@@ -45,6 +45,53 @@ export function initRandom() {
   _gen = 0;
 }
 
+// Strategy indices (fixed by order in strategies.js)
+const SI = { allC: 0, allD: 1, tft: 2, tf2t: 3, grim: 4, pvlv: 5, rand: 6, gtft: 7, stft: 8 };
+
+export function initScenario(name) {
+  scores.fill(0);
+  _gen = 0;
+
+  switch (name) {
+    case 'duel': {
+      // TfT holds the west, AllD floods the east — watch the front line
+      const split = Math.floor(GRID_W * 0.52);
+      for (let i = 0; i < GRID_N; i++)
+        grid[i] = (i % GRID_W) < split ? SI.tft : SI.allD;
+      break;
+    }
+    case 'strips': {
+      // Every strategy gets an equal vertical strip — a race from the start
+      const n = STRATEGIES.length;
+      for (let i = 0; i < GRID_N; i++)
+        grid[i] = Math.min(n - 1, Math.floor((i % GRID_W) / GRID_W * n));
+      break;
+    }
+    case 'surrounded': {
+      // AllD colony in the center of a TfT sea — will cooperation close in?
+      grid.fill(SI.tft);
+      const cx = GRID_W >> 1, cy = GRID_H >> 1;
+      const r2 = (Math.min(GRID_W, GRID_H) * 0.16) ** 2;
+      for (let y = 0; y < GRID_H; y++)
+        for (let x = 0; x < GRID_W; x++)
+          if ((x - cx) ** 2 + (y - cy) ** 2 <= r2)
+            grid[y * GRID_W + x] = SI.allD;
+      break;
+    }
+    case 'avalanche': {
+      // Grim Trigger wall on the left, naive cooperators everywhere else
+      grid.fill(SI.allC);
+      const gw = Math.floor(GRID_W * 0.1);
+      for (let y = 0; y < GRID_H; y++)
+        for (let x = 0; x < gw; x++)
+          grid[y * GRID_W + x] = SI.grim;
+      break;
+    }
+    default:
+      initRandom();
+  }
+}
+
 export function step(pay, matchRounds) {
   // Phase 1: accumulate score from all 8 neighbours
   for (let y = 0; y < GRID_H; y++) {

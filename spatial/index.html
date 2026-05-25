@@ -29,8 +29,8 @@
       <span id="leader-pct" class="leader-pct"></span>
     </div>
     <div class="play-wrap">
-      <button class="ctrl-btn" id="btn-pause" title="Pause / Play">⏸</button>
-      <button class="ctrl-btn" id="btn-step"  title="Step one generation">⏭</button>
+      <button class="ctrl-btn" id="btn-pause" title="Pause / Play (Space)">⏸</button>
+      <button class="ctrl-btn" id="btn-step"  title="Step one generation (→)">⏭</button>
       <div class="speed-btns">
         <button class="spd-btn" data-spd="1">×1</button>
         <button class="spd-btn active" data-spd="4">×4</button>
@@ -52,12 +52,32 @@
         <button class="brush-btn" data-r="14">◯</button>
       </div>
     </div>
+
+    <div class="scenario-wrap">
+      <span class="tool-label">Start</span>
+      <button class="scen-btn" data-scen="random">🎲 Random</button>
+      <button class="scen-btn" data-scen="duel">⚔ Duel</button>
+      <button class="scen-btn" data-scen="strips">▦ Strips</button>
+      <button class="scen-btn" data-scen="surrounded">◎ Siege</button>
+      <button class="scen-btn" data-scen="avalanche">🌊 Wave</button>
+    </div>
+
     <div class="event-wrap">
+      <span class="tool-label">Events</span>
       <button class="evt-btn" data-evt="famine">☠ Famine</button>
       <button class="evt-btn" data-evt="paradise">✦ Paradise</button>
       <button class="evt-btn" data-evt="plague">⚗ Plague</button>
       <button class="evt-btn" data-evt="invasion">⚔ Invasion</button>
-      <button class="evt-btn" data-evt="reset">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- ── Payoff panel ──────────────────────────────────────────────────── -->
+  <div id="payoff-panel">
+    <div class="pp-title">Payoffs</div>
+    <div class="pp-grid">
+      <span class="pp-empty"></span><span class="pp-head">C</span><span class="pp-head">D</span>
+      <span class="pp-head">C</span><span class="pp-val" id="pay-R">3</span><span class="pp-val" id="pay-S">0</span>
+      <span class="pp-head">D</span><span class="pp-val" id="pay-T">5</span><span class="pp-val" id="pay-P">1</span>
     </div>
   </div>
 
@@ -81,13 +101,14 @@
         neighbors. The highest scorer spreads its strategy to surrounding cells.
       </p>
       <p class="intro-body">
-        Watch cooperation and betrayal fight for dominance across thousands of generations.
+        Watch cooperation and betrayal fight for dominance. Cells flash white when
+        they flip — the brighter the border, the more active the battle.
       </p>
       <div class="intro-tip">
         <span class="intro-tip-label">Try this</span>
-        Paint a blob of <strong style="color:#B83535">Always Defect</strong> into
-        <strong style="color:#3D6FB5">Tit for Tat</strong> territory —
-        watch the containment wall form.
+        Hit <strong>⚔ Duel</strong> to pit Tit for Tat against Always Defect —
+        watch the containment wall form at the border.
+        Then try <strong>🌊 Wave</strong> to see grudges consume a sea of cooperators.
       </div>
       <button id="intro-start">Start Watching →</button>
       <div class="intro-keys">Space to pause &nbsp;·&nbsp; → to step one generation</div>

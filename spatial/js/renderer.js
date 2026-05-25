@@ -1,4 +1,4 @@
-import { GRID_W, GRID_H, grid } from './world.js';
+import { GRID_W, GRID_H, GRID_N, grid } from './world.js';
 
 // Political map palette — earthy, distinct, readable on dark background
 const COLORS = [
@@ -12,6 +12,11 @@ const COLORS = [
   [ 45, 144,  96], // GTfT  — forest teal
   [154, 149,  24], // STfT  — olive
 ];
+
+// Flash tracking — cells light up white when they flip strategy
+const _prevGrid  = new Uint8Array(GRID_N);
+const _changedAt = new Float32Array(GRID_N).fill(-9999);
+const FLASH_MS   = 700;
 
 // Off-screen source canvas drawn at grid resolution
 const src    = document.createElement('canvas');
@@ -29,15 +34,31 @@ export function setup(mainCanvas) {
 export function render(timestamp, hoverCell) {
   if (!_main) return;
 
-  // ── Write one pixel per cell ────────────────────────────────────────────
+  // ── Write one pixel per cell, with flash on strategy change ────────────
   if (!_img) _img = srcCtx.createImageData(GRID_W, GRID_H);
   const d = _img.data;
-  for (let i = 0; i < GRID_W * GRID_H; i++) {
-    const c = COLORS[grid[i]];
+
+  for (let i = 0; i < GRID_N; i++) {
+    const s = grid[i];
+    const c = COLORS[s];
+    let r = c[0], g = c[1], b = c[2];
+
+    if (s !== _prevGrid[i]) {
+      _changedAt[i] = timestamp;
+      _prevGrid[i]  = s;
+    }
+    const age = timestamp - _changedAt[i];
+    if (age < FLASH_MS) {
+      const fl = (1 - age / FLASH_MS) * 0.82;
+      r = (r + (255 - r) * fl) | 0;
+      g = (g + (255 - g) * fl) | 0;
+      b = (b + (255 - b) * fl) | 0;
+    }
+
     const p = i * 4;
-    d[p]     = c[0];
-    d[p + 1] = c[1];
-    d[p + 2] = c[2];
+    d[p]     = r;
+    d[p + 1] = g;
+    d[p + 2] = b;
     d[p + 3] = 255;
   }
   srcCtx.putImageData(_img, 0, 0);
@@ -46,7 +67,7 @@ export function render(timestamp, hoverCell) {
   const W = _main.width, H = _main.height;
   const cw = W / GRID_W, ch = H / GRID_H;
 
-  // ── Scale up — crisp territory blocks, no blurring ─────────────────────
+  // ── Scale up — crisp territory blocks ──────────────────────────────────
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(src, 0, 0, W, H);
 
@@ -54,7 +75,6 @@ export function render(timestamp, hoverCell) {
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
   ctx.lineWidth   = 1.5;
 
-  // Vertical borders (right edge of each column)
   ctx.beginPath();
   for (let y = 0; y < GRID_H; y++) {
     for (let x = 0; x < GRID_W - 1; x++) {
@@ -67,7 +87,6 @@ export function render(timestamp, hoverCell) {
   }
   ctx.stroke();
 
-  // Horizontal borders (bottom edge of each row)
   ctx.beginPath();
   for (let y = 0; y < GRID_H - 1; y++) {
     for (let x = 0; x < GRID_W; x++) {

@@ -2,7 +2,7 @@ import { STRATEGIES } from './strategies.js';
 import {
   GRID_W, GRID_H, GRID_N,
   grid, scores,
-  initRandom, step, paintCircle, getNeighbourStrategies, getGeneration,
+  initRandom, initScenario, step, paintCircle, getNeighbourStrategies, getGeneration,
 } from './world.js';
 import { render, renderUI, setup } from './renderer.js';
 
@@ -39,6 +39,7 @@ function init() {
   wireSpeedBtns();
   wireBrushBtns();
   wireEventBtns();
+  wireScenarios();
   wirePlayControls();
   wireCanvas();
   wireIntro();
@@ -63,7 +64,6 @@ function loop(ts) {
 
   if (!paused) {
     if (stepsPerSec === 0) {
-      // Warp: multiple steps per frame
       for (let k = 0; k < 4; k++) step(pay, MATCH_ROUNDS);
     } else if (ts - lastStep >= 1000 / stepsPerSec) {
       step(pay, MATCH_ROUNDS);
@@ -98,12 +98,29 @@ function updateHUD() {
 
   const leader    = STRATEGIES[maxI];
   const leaderPct = (_counts[maxI] / GRID_N * 100).toFixed(0);
-  const ldot = document.getElementById('leader-dot');
+  const ldot  = document.getElementById('leader-dot');
   const lname = document.getElementById('leader-name');
   const lpct  = document.getElementById('leader-pct');
   if (ldot)  ldot.style.background = leader.color;
   if (lname) { lname.textContent = leader.short; lname.style.color = leader.color; }
   if (lpct)  lpct.textContent = leaderPct + '%';
+
+  updatePayoffDisplay();
+}
+
+function updatePayoffDisplay() {
+  const p = payoffMod || payoffs;
+  const fmt = v => Number.isInteger(v) ? v : v.toFixed(1);
+  const set = (id, val, base) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = fmt(val);
+    el.classList.toggle('pay-modified', val !== base);
+  };
+  set('pay-R', p.R, payoffs.R);
+  set('pay-S', p.S, payoffs.S);
+  set('pay-T', p.T, payoffs.T);
+  set('pay-P', p.P, payoffs.P);
 }
 
 // ── Strategy picker ───────────────────────────────────────────────────────
@@ -190,12 +207,43 @@ function wirePlayControls() {
 
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-    if (e.code === 'Space') { e.preventDefault(); btnPause.click(); }
+    if (e.code === 'Space')      { e.preventDefault(); btnPause.click(); }
     if (e.code === 'ArrowRight') { e.preventDefault(); step(payoffMod || payoffs, MATCH_ROUNDS); }
   });
 }
 
+// ── Scenarios ─────────────────────────────────────────────────────────────
+const SCENARIO_META = {
+  random:     { label: '🎲 New World',     sub: 'The primordial soup. Anything can happen.' },
+  duel:       { label: '⚔ Classic Duel',   sub: 'TfT holds the west. Always Defect floods the east. Watch the front line.' },
+  strips:     { label: '▦ The Strips',     sub: 'Nine strategies, equal ground. Watch the columns collapse one by one.' },
+  surrounded: { label: '◎ The Siege',      sub: 'A defector colony, surrounded by cooperators. Will they hold or be consumed?' },
+  avalanche:  { label: '🌊 Avalanche',     sub: 'Grudge spreads from the west into a sea of naive cooperators. They have no idea.' },
+};
+
+function wireScenarios() {
+  document.querySelectorAll('.scen-btn').forEach(btn => {
+    const name = btn.dataset.scen;
+    const meta = SCENARIO_META[name];
+    if (meta) btn.dataset.tooltip = meta.sub;
+    btn.addEventListener('click', () => {
+      payoffMod = null;
+      clearTimeout(eventTimer);
+      document.querySelectorAll('.evt-btn').forEach(b => b.classList.remove('evt-active'));
+      initScenario(name);
+      if (meta) showFlash(meta.label, meta.sub, 3500);
+    });
+  });
+}
+
 // ── Environmental events ──────────────────────────────────────────────────
+const EVENT_META = {
+  famine:   { label: '☠  Famine',   sub: 'Cooperation yields less. Defectors surge.',   tooltip: 'Mutual cooperation earns 45% less for 18s — defectors gain ground.',   mod: p => ({ ...p, R: p.R * 0.55, S: 0 }) },
+  paradise: { label: '✦  Paradise', sub: 'Cooperation is richly rewarded.',              tooltip: 'Cooperation bonus +2.5 pts for 18s — cooperators thrive.',              mod: p => ({ ...p, R: p.R + 2.5, S: p.S + 1 }) },
+  plague:   { label: '⚗  Plague',   sub: '15% of organisms mutate randomly.',            tooltip: '15% of cells instantly mutate to a random strategy.',                   mod: null },
+  invasion: { label: '⚔  Invasion', sub: 'A wave of strangers floods the south-east.',  tooltip: 'The south-east is flooded with a single random strategy.',              mod: null },
+};
+
 function wireEventBtns() {
   document.querySelectorAll('.evt-btn').forEach(btn => {
     const meta = EVENT_META[btn.dataset.evt];
@@ -204,20 +252,11 @@ function wireEventBtns() {
   });
 }
 
-const EVENT_META = {
-  famine:   { label: '☠  Famine',   sub: 'Cooperation yields less. Defectors surge.',  tooltip: 'Mutual cooperation earns 45% less for 18s — defectors gain ground.',      mod: p => ({ ...p, R: p.R * 0.55, S: 0 }) },
-  paradise: { label: '✦  Paradise', sub: 'Cooperation is richly rewarded.',            tooltip: 'Cooperation bonus +2.5 pts for 18s — cooperators thrive.',                 mod: p => ({ ...p, R: p.R + 2.5, S: p.S + 1 }) },
-  plague:   { label: '⚗  Plague',   sub: '15% of organisms mutate randomly.',          tooltip: '15% of cells instantly mutate to a random strategy.',                      mod: null },
-  invasion: { label: '⚔  Invasion', sub: 'A wave of strangers floods the south-east.', tooltip: 'The south-east is flooded with a single random strategy.',                 mod: null },
-  reset:    { label: '↺  Reset',    sub: 'The world begins again.',                    tooltip: 'Randomise all territories and restart from scratch.',                       mod: null },
-};
-
 function triggerEvent(name, btn) {
   const meta = EVENT_META[name];
   if (!meta) return;
 
   showFlash(meta.label, meta.sub);
-
   clearTimeout(eventTimer);
   payoffMod = null;
 
@@ -233,35 +272,28 @@ function triggerEvent(name, btn) {
     case 'plague': {
       const kill = Math.floor(GRID_N * 0.15);
       const n    = STRATEGIES.length;
-      for (let k = 0; k < kill; k++) {
+      for (let k = 0; k < kill; k++)
         grid[Math.floor(Math.random() * GRID_N)] = Math.floor(Math.random() * n);
-      }
       break;
     }
 
     case 'invasion': {
       const invStrat = Math.floor(Math.random() * STRATEGIES.length);
       const x0 = Math.floor(GRID_W * 0.55), y0 = Math.floor(GRID_H * 0.55);
-      for (let y = y0; y < GRID_H; y++) {
-        for (let x = x0; x < GRID_W; x++) {
+      for (let y = y0; y < GRID_H; y++)
+        for (let x = x0; x < GRID_W; x++)
           if (Math.random() < 0.82) grid[y * GRID_W + x] = invStrat;
-        }
-      }
       break;
     }
-
-    case 'reset':
-      initRandom();
-      break;
   }
 }
 
-function showFlash(label, sub) {
+function showFlash(label, sub, duration = 2400) {
   const el = document.getElementById('evt-flash');
   el.innerHTML = `<div class="flash-title">${label}</div><div class="flash-sub">${sub}</div>`;
   el.style.display = 'flex';
   clearTimeout(el._t);
-  el._t = setTimeout(() => { el.style.display = 'none'; }, 2400);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, duration);
 }
 
 // ── Canvas interactions ───────────────────────────────────────────────────
@@ -277,11 +309,7 @@ function wireCanvas() {
   const hint = document.getElementById('canvas-hint');
   const dismissHint = (() => {
     let done = false;
-    return () => {
-      if (done) return;
-      done = true;
-      hint.classList.add('hidden');
-    };
+    return () => { if (!done) { done = true; hint.classList.add('hidden'); } };
   })();
   setTimeout(dismissHint, 7000);
 
@@ -307,9 +335,7 @@ function wireCanvas() {
   });
 }
 
-// Inspector order: maps flat NB index [0..7] → 3×3 grid position
-// NB order: TL,T,TR,L,R,BL,B,BR  (from world.js NB_DX/NB_DY)
-// 3×3 slot order: TL,T,TR,L,C,R,BL,B,BR → NB indices: 0,1,2,3,·,4,5,6,7
+// NB order: TL,T,TR,L,R,BL,B,BR → 3×3 slot order: TL,T,TR,L,C,R,BL,B,BR
 const NB_SLOT = [0, 1, 2, 3, -1, 4, 5, 6, 7];
 
 function showInspector(e, cx, cy) {
@@ -329,9 +355,8 @@ function showInspector(e, cx, cy) {
   const insp = document.getElementById('inspector');
   insp.style.display = 'flex';
 
-  // Keep tooltip on screen
   let lx = e.clientX + 18, ly = e.clientY - 8;
-  if (lx + 220 > window.innerWidth)  lx = e.clientX - 228;
+  if (lx + 220 > window.innerWidth)       lx = e.clientX - 228;
   if (ly + 180 > window.innerHeight - 64) ly = e.clientY - 172;
   insp.style.left = lx + 'px';
   insp.style.top  = ly + 'px';
