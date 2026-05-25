@@ -1,55 +1,61 @@
-import { GRID_W, GRID_H, grid, scores } from './world.js';
+import { GRID_W, GRID_H, grid } from './world.js';
 
-// RGB triples matching strategy hex colours (same order as STRATEGIES array)
+// Vivid bioluminescent palette — pops against dark background
 const COLORS = [
-  [74,  222, 128],  // AllC  #4ade80  green
-  [248, 113, 113],  // AllD  #f87171  red
-  [96,  165, 250],  // TfT   #60a5fa  blue
-  [167, 139, 250],  // Tf2T  #a78bfa  violet
-  [251, 146,  60],  // Grim  #fb923c  orange
-  [232, 121, 249],  // Pvlv  #e879f9  fuchsia
-  [148, 163, 184],  // Rand  #94a3b8  slate
-  [ 52, 211, 153],  // GTfT  #34d399  emerald
-  [251, 191,  36],  // STfT  #fbbf24  amber
+  [  0, 255, 140],  // AllC  — vivid green
+  [255,  45,  70],  // AllD  — hot red
+  [ 50, 160, 255],  // TfT   — electric blue
+  [190,  90, 255],  // Tf2T  — ultraviolet
+  [255, 150,   0],  // Grim  — amber fire
+  [255,  60, 200],  // Pvlv  — neon magenta
+  [ 80, 210, 240],  // Rand  — ice cyan
+  [  0, 230, 180],  // GTfT  — bioluminescent teal
+  [255, 220,   0],  // STfT  — electric yellow
 ];
 
-// Per-strategy brightness animation — returns multiplier in [0,1]
-// t = seconds, x/y = grid coords (0-indexed)
+// Per-strategy brightness animation — smooth, organic, no aliasing
 const ANIMS = [
-  // AllC: slow, peaceful breath
-  (t)       => 0.68 + 0.32 * Math.sin(t * 1.7),
-  // AllD: chaotic high-freq flicker
-  (t, x, y) => 0.28 + 0.62 * (0.5 + 0.5 * Math.sin(t * 37.3 + x * 8.7 + y * 13.1)),
-  // TfT: ripple wave that travels diagonally
-  (t, x, y) => 0.70 + 0.30 * Math.sin(t * 2.4 + (x + y) * 0.22),
-  // Tf2T: deep, slow throb
-  (t)       => 0.65 + 0.35 * Math.sin(t * 1.1),
-  // Grim: almost static, brief glint
-  (t, x, y) => 0.58 + 0.08 * Math.sin(t * 5.2 + x * 3.1 + y * 1.7),
-  // Pavlov: rhythmic on-off throb
-  (t)       => 0.50 + 0.50 * Math.abs(Math.sin(t * 3.6)),
-  // Random: granular noise
-  (t, x, y) => 0.35 + 0.60 * (0.5 + 0.5 * Math.sin(t * 19.1 + x * 5.3 + y * 7.9)),
+  // AllC: slow peaceful breath
+  (t)       => 0.72 + 0.28 * Math.sin(t * 1.6),
+  // AllD: unstable shimmer (position-varied but smooth)
+  (t, x, y) => 0.40 + 0.55 * (0.5 + 0.5 * Math.sin(t * 11.3 + x * 0.9 + y * 1.3)),
+  // TfT: diagonal ripple wave
+  (t, x, y) => 0.72 + 0.28 * Math.sin(t * 2.2 + (x + y) * 0.18),
+  // Tf2T: slow deep pulse
+  (t)       => 0.68 + 0.32 * Math.sin(t * 1.0),
+  // Grim: nearly static with slow ember glow
+  (t, x)    => 0.62 + 0.12 * Math.sin(t * 2.1 + x * 0.4),
+  // Pavlov: smooth rhythmic throb (no aliasing)
+  (t)       => 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(t * 3.4)),
+  // Random: slow incoherent drift
+  (t, x, y) => 0.45 + 0.50 * (0.5 + 0.5 * Math.sin(t * 7.1 + x * 1.7 + y * 2.3)),
   // GTfT: warm wandering glow
-  (t, x, y) => 0.70 + 0.30 * Math.sin(t * 1.6 + x * 0.11 - y * 0.07),
-  // STfT: nervous mid-freq flicker
-  (t, x, y) => 0.52 + 0.42 * (0.5 + 0.5 * Math.sin(t * 12.7 + y * 5.9 + x * 2.1)),
+  (t, x, y) => 0.70 + 0.30 * Math.sin(t * 1.5 + x * 0.09 - y * 0.06),
+  // STfT: nervous medium flicker
+  (t, x, y) => 0.50 + 0.45 * (0.5 + 0.5 * Math.sin(t * 8.9 + y * 1.4 + x * 0.8)),
 ];
 
-// Off-screen grid canvas (GRID_W × GRID_H pixels)
-const offscreen = document.createElement('canvas');
-offscreen.width  = GRID_W;
-offscreen.height = GRID_H;
-const offCtx = offscreen.getContext('2d');
-let _imgData = null;
+// Off-screen source canvas — drawn at grid resolution, scaled up by CSS/drawImage
+const src    = document.createElement('canvas');
+src.width    = GRID_W;
+src.height   = GRID_H;
+const srcCtx = src.getContext('2d');
+let _img     = null;
 
-export function render(canvas, timestamp, hoverCell) {
-  const t   = timestamp / 1000;
-  const ctx = canvas.getContext('2d');
+// References set once by setup()
+let _main, _glow;
 
-  // ── Step 1: write pixels into ImageData ──────────────────────────────────
-  if (!_imgData) _imgData = offCtx.createImageData(GRID_W, GRID_H);
-  const d = _imgData.data;
+export function setup(mainCanvas, glowCanvas) {
+  _main = mainCanvas;
+  _glow = glowCanvas;
+}
+
+export function render(timestamp, hoverCell) {
+  const t = timestamp / 1000;
+
+  // ── Write pixels ─────────────────────────────────────────────────────────
+  if (!_img) _img = srcCtx.createImageData(GRID_W, GRID_H);
+  const d = _img.data;
 
   for (let y = 0; y < GRID_H; y++) {
     for (let x = 0; x < GRID_W; x++) {
@@ -64,21 +70,48 @@ export function render(canvas, timestamp, hoverCell) {
       d[p + 3] = 255;
     }
   }
-  offCtx.putImageData(_imgData, 0, 0);
+  srcCtx.putImageData(_img, 0, 0);
 
-  // ── Step 2: scale up to display canvas (pixel-perfect) ───────────────────
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = '#07071a';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(offscreen, 0, 0, canvas.width, canvas.height);
-
-  // ── Step 3: hover highlight ───────────────────────────────────────────────
-  if (hoverCell) {
-    const cw = canvas.width  / GRID_W;
-    const ch = canvas.height / GRID_H;
-    const [hx, hy] = hoverCell;
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-    ctx.lineWidth   = 1.5;
-    ctx.strokeRect(hx * cw + 0.5, hy * ch + 0.5, cw - 1, ch - 1);
+  // ── Draw to glow canvas (CSS applies heavy blur → luminous halos) ─────────
+  if (_glow) {
+    const gc = _glow.getContext('2d');
+    gc.imageSmoothingEnabled = true;
+    gc.imageSmoothingQuality = 'high';
+    gc.clearRect(0, 0, _glow.width, _glow.height);
+    gc.drawImage(src, 0, 0, _glow.width, _glow.height);
   }
+
+  // ── Draw to main canvas (CSS applies soft blur → organic blobs) ──────────
+  const ctx = _main.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.clearRect(0, 0, _main.width, _main.height);
+  ctx.drawImage(src, 0, 0, _main.width, _main.height);
+}
+
+// Draw hover ring and brush preview on the UI canvas (no CSS filter)
+export function renderUI(uiCanvas, hoverCell, brushRadius) {
+  const ctx = uiCanvas.getContext('2d');
+  ctx.clearRect(0, 0, uiCanvas.width, uiCanvas.height);
+  if (!hoverCell) return;
+
+  const cw = uiCanvas.width  / GRID_W;
+  const ch = uiCanvas.height / GRID_H;
+  const [hx, hy] = hoverCell;
+  const cx = (hx + 0.5) * cw;
+  const cy = (hy + 0.5) * ch;
+  const r  = (brushRadius + 0.5) * Math.max(cw, ch);
+
+  // Brush radius circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
+
+  // Centre dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fill();
 }

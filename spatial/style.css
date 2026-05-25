@@ -37,14 +37,27 @@ html, body {
   pointer-events: none; z-index: 1;
 }
 
-/* ── Canvas ────────────────────────────────────────────────────────────── */
+/* ── Canvas stack ──────────────────────────────────────────────────────── */
+
+/* Glow layer: same image, heavy blur → luminous halos around territories */
+#world-glow {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+  filter: blur(28px) saturate(2.8) brightness(1.1);
+  opacity: 0.55;
+}
+
+/* Main layer: mild blur removes blockiness → smooth organic blobs */
 #world {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  cursor: crosshair;
-  filter: saturate(1.25) brightness(1.04);
+  pointer-events: none; z-index: 1;
+  filter: blur(4px) saturate(1.5) brightness(1.05);
+}
+
+/* UI layer: no filter → crisp hover ring and brush circle */
+#world-ui {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  cursor: crosshair; z-index: 2;
 }
 
 /* ── HUD bars ──────────────────────────────────────────────────────────── */

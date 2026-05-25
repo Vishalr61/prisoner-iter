@@ -4,32 +4,36 @@ import {
   grid, scores,
   initRandom, step, paintCircle, getNeighbourStrategies, getGeneration,
 } from './world.js';
-import { render } from './renderer.js';
+import { render, renderUI, setup } from './renderer.js';
 
 // ── App state ──────────────────────────────────────────────────────────────
 let paused       = false;
-let stepsPerSec  = 4;   // 0 = warp (every frame)
+let stepsPerSec  = 4;
 let brushRadius  = 3;
 let paintIdx     = 2;   // default: TfT
 let hoverCell    = null;
 let isPainting   = false;
 let payoffs      = { R: 3, T: 5, P: 1, S: 0 };
-let payoffMod    = null;   // temporary event override
+let payoffMod    = null;
 let eventTimer   = null;
 const MATCH_ROUNDS = 5;
 
-// ── Canvas ─────────────────────────────────────────────────────────────────
-const canvas = document.getElementById('world');
+// ── Canvases ────────────────────────────────────────────────────────────────
+const canvas     = document.getElementById('world');
+const glowCanvas = document.getElementById('world-glow');
+const uiCanvas   = document.getElementById('world-ui');
 
 function resizeCanvas() {
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const w = window.innerWidth, h = window.innerHeight;
+  canvas.width = glowCanvas.width = uiCanvas.width  = w;
+  canvas.height = glowCanvas.height = uiCanvas.height = h;
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 function init() {
   resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  setup(canvas, glowCanvas);
+  window.addEventListener('resize', () => { resizeCanvas(); setup(canvas, glowCanvas); });
   initRandom();
   buildStratPicker();
   buildPopBars();
@@ -56,7 +60,8 @@ function loop(ts) {
     }
   }
 
-  render(canvas, ts, hoverCell);
+  render(ts, hoverCell);
+  renderUI(uiCanvas, hoverCell, brushRadius);
   updateHUD();
   requestAnimationFrame(loop);
 }
@@ -220,7 +225,7 @@ function showFlash(label, sub) {
 
 // ── Canvas interactions ───────────────────────────────────────────────────
 function toGrid(e) {
-  const r = canvas.getBoundingClientRect();
+  const r = uiCanvas.getBoundingClientRect();
   return [
     Math.floor((e.clientX - r.left) / r.width  * GRID_W),
     Math.floor((e.clientY - r.top)  / r.height * GRID_H),
@@ -228,21 +233,21 @@ function toGrid(e) {
 }
 
 function wireCanvas() {
-  canvas.addEventListener('mousedown', e => {
+  uiCanvas.addEventListener('mousedown', e => {
     isPainting = true;
     const [cx, cy] = toGrid(e);
     paintCircle(cx, cy, paintIdx, brushRadius);
   });
 
-  canvas.addEventListener('mousemove', e => {
+  uiCanvas.addEventListener('mousemove', e => {
     const [cx, cy] = toGrid(e);
     if (isPainting) paintCircle(cx, cy, paintIdx, brushRadius);
     hoverCell = [cx, cy];
     showInspector(e, cx, cy);
   });
 
-  canvas.addEventListener('mouseup',    () => { isPainting = false; });
-  canvas.addEventListener('mouseleave', () => {
+  uiCanvas.addEventListener('mouseup',    () => { isPainting = false; });
+  uiCanvas.addEventListener('mouseleave', () => {
     isPainting = false;
     hoverCell  = null;
     document.getElementById('inspector').style.display = 'none';

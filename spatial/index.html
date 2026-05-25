@@ -11,18 +11,18 @@
 <body>
 <div class="arena">
 
+  <!-- Rendering stack (back → front) -->
+  <canvas id="world-glow"></canvas>
   <canvas id="world"></canvas>
+  <canvas id="world-ui"></canvas>
 
-  <!-- ── Top HUD: gen counter + pop bars + speed ─────────────────────── -->
+  <!-- ── Top HUD ───────────────────────────────────────────────────────── -->
   <div class="hud hud-top">
-
     <div class="gen-wrap">
       <span class="gen-label">Gen</span>
       <span id="gen-num">0</span>
     </div>
-
     <div class="pop-bars" id="pop-bars"></div>
-
     <div class="play-wrap">
       <button class="ctrl-btn" id="btn-pause" title="Pause / Play">⏸</button>
       <button class="ctrl-btn" id="btn-step"  title="Step one generation">⏭</button>
@@ -33,37 +33,30 @@
         <button class="spd-btn" data-spd="0">⚡</button>
       </div>
     </div>
-
   </div>
 
-  <!-- ── Bottom HUD: paint + events ──────────────────────────────────── -->
+  <!-- ── Bottom HUD ────────────────────────────────────────────────────── -->
   <div class="hud hud-bottom">
-
     <div class="paint-wrap">
       <span class="tool-label">Paint</span>
       <div id="strat-picker"></div>
       <span class="tool-label">Brush</span>
       <div class="brush-btns">
-        <button class="brush-btn active" data-r="3" title="Small">·</button>
-        <button class="brush-btn" data-r="7"  title="Medium">○</button>
-        <button class="brush-btn" data-r="14" title="Large">◯</button>
+        <button class="brush-btn active" data-r="3">·</button>
+        <button class="brush-btn" data-r="7">○</button>
+        <button class="brush-btn" data-r="14">◯</button>
       </div>
     </div>
-
     <div class="event-wrap">
-      <button class="evt-btn" data-evt="famine"   title="Cooperation yields less for 18s">☠ Famine</button>
-      <button class="evt-btn" data-evt="paradise" title="Cooperation richly rewarded for 18s">✦ Paradise</button>
-      <button class="evt-btn" data-evt="plague"   title="15% of organisms mutate randomly">⚗ Plague</button>
-      <button class="evt-btn" data-evt="invasion" title="Flood the south-east with a single strategy">⚔ Invasion</button>
-      <button class="evt-btn" data-evt="reset"    title="Randomise the world">↺ Reset</button>
+      <button class="evt-btn" data-evt="famine">☠ Famine</button>
+      <button class="evt-btn" data-evt="paradise">✦ Paradise</button>
+      <button class="evt-btn" data-evt="plague">⚗ Plague</button>
+      <button class="evt-btn" data-evt="invasion">⚔ Invasion</button>
+      <button class="evt-btn" data-evt="reset">↺ Reset</button>
     </div>
-
   </div>
 
-  <!-- ── Inspector tooltip ────────────────────────────────────────────── -->
   <div id="inspector" style="display:none"></div>
-
-  <!-- ── Event flash ──────────────────────────────────────────────────── -->
   <div id="evt-flash" style="display:none"></div>
 
 </div>
