@@ -29,32 +29,17 @@ html, body {
   background: var(--bg);
 }
 
-/* Vignette */
-.arena::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(7,7,26,0.65) 100%);
-  pointer-events: none; z-index: 1;
-}
 
 /* ── Canvas stack ──────────────────────────────────────────────────────── */
 
-/* Glow layer: same image, heavy blur → luminous halos around territories */
-#world-glow {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  pointer-events: none; z-index: 0;
-  filter: blur(28px) saturate(2.8) brightness(1.1);
-  opacity: 0.55;
-}
-
-/* Main layer: mild blur removes blockiness → smooth organic blobs */
+/* Main layer: crisp territory map, no blur */
 #world {
   position: absolute; inset: 0; width: 100%; height: 100%;
   pointer-events: none; z-index: 1;
-  filter: blur(4px) saturate(1.5) brightness(1.05);
+  image-rendering: pixelated;
 }
 
-/* UI layer: no filter → crisp hover ring and brush circle */
+/* UI layer: hover ring and brush circle */
 #world-ui {
   position: absolute; inset: 0; width: 100%; height: 100%;
   cursor: crosshair; z-index: 2;

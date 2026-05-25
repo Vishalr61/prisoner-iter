@@ -19,21 +19,20 @@ let eventTimer   = null;
 const MATCH_ROUNDS = 5;
 
 // ── Canvases ────────────────────────────────────────────────────────────────
-const canvas     = document.getElementById('world');
-const glowCanvas = document.getElementById('world-glow');
-const uiCanvas   = document.getElementById('world-ui');
+const canvas   = document.getElementById('world');
+const uiCanvas = document.getElementById('world-ui');
 
 function resizeCanvas() {
   const w = window.innerWidth, h = window.innerHeight;
-  canvas.width = glowCanvas.width = uiCanvas.width  = w;
-  canvas.height = glowCanvas.height = uiCanvas.height = h;
+  canvas.width = uiCanvas.width  = w;
+  canvas.height = uiCanvas.height = h;
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 function init() {
   resizeCanvas();
-  setup(canvas, glowCanvas);
-  window.addEventListener('resize', () => { resizeCanvas(); setup(canvas, glowCanvas); });
+  setup(canvas);
+  window.addEventListener('resize', () => { resizeCanvas(); setup(canvas); });
   initRandom();
   buildStratPicker();
   buildPopBars();
