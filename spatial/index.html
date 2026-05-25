@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Primordial Arena · Prisoner's Dilemma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="arena">
+
+  <canvas id="world"></canvas>
+
+  <!-- ── Top HUD: gen counter + pop bars + speed ─────────────────────── -->
+  <div class="hud hud-top">
+
+    <div class="gen-wrap">
+      <span class="gen-label">Gen</span>
+      <span id="gen-num">0</span>
+    </div>
+
+    <div class="pop-bars" id="pop-bars"></div>
+
+    <div class="play-wrap">
+      <button class="ctrl-btn" id="btn-pause" title="Pause / Play">⏸</button>
+      <button class="ctrl-btn" id="btn-step"  title="Step one generation">⏭</button>
+      <div class="speed-btns">
+        <button class="spd-btn" data-spd="1">×1</button>
+        <button class="spd-btn active" data-spd="4">×4</button>
+        <button class="spd-btn" data-spd="12">×12</button>
+        <button class="spd-btn" data-spd="0">⚡</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Bottom HUD: paint + events ──────────────────────────────────── -->
+  <div class="hud hud-bottom">
+
+    <div class="paint-wrap">
+      <span class="tool-label">Paint</span>
+      <div id="strat-picker"></div>
+      <span class="tool-label">Brush</span>
+      <div class="brush-btns">
+        <button class="brush-btn active" data-r="3" title="Small">·</button>
+        <button class="brush-btn" data-r="7"  title="Medium">○</button>
+        <button class="brush-btn" data-r="14" title="Large">◯</button>
+      </div>
+    </div>
+
+    <div class="event-wrap">
+      <button class="evt-btn" data-evt="famine"   title="Cooperation yields less for 18s">☠ Famine</button>
+      <button class="evt-btn" data-evt="paradise" title="Cooperation richly rewarded for 18s">✦ Paradise</button>
+      <button class="evt-btn" data-evt="plague"   title="15% of organisms mutate randomly">⚗ Plague</button>
+      <button class="evt-btn" data-evt="invasion" title="Flood the south-east with a single strategy">⚔ Invasion</button>
+      <button class="evt-btn" data-evt="reset"    title="Randomise the world">↺ Reset</button>
+    </div>
+
+  </div>
+
+  <!-- ── Inspector tooltip ────────────────────────────────────────────── -->
+  <div id="inspector" style="display:none"></div>
+
+  <!-- ── Event flash ──────────────────────────────────────────────────── -->
+  <div id="evt-flash" style="display:none"></div>
+
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
