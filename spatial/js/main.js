@@ -41,7 +41,19 @@ function init() {
   wireEventBtns();
   wirePlayControls();
   wireCanvas();
+  wireIntro();
   requestAnimationFrame(loop);
+}
+
+function wireIntro() {
+  const overlay = document.getElementById('intro-overlay');
+  const dismiss = () => {
+    overlay.style.transition = 'opacity .4s ease';
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 400);
+  };
+  document.getElementById('intro-start').addEventListener('click', dismiss);
+  overlay.addEventListener('click', e => { if (e.target === overlay) dismiss(); });
 }
 
 // ── Game loop ──────────────────────────────────────────────────────────────
@@ -74,30 +86,52 @@ function updateHUD() {
   _counts.fill(0);
   for (let i = 0; i < GRID_N; i++) _counts[grid[i]]++;
 
+  let maxI = 0;
   STRATEGIES.forEach((_, i) => {
     const pct = (_counts[i] / GRID_N * 100);
     const fill = document.getElementById(`pf-${i}`);
     const lbl  = document.getElementById(`pp-${i}`);
     if (fill) fill.style.width = pct.toFixed(1) + '%';
     if (lbl)  lbl.textContent  = pct.toFixed(0) + '%';
+    if (_counts[i] > _counts[maxI]) maxI = i;
   });
+
+  const leader    = STRATEGIES[maxI];
+  const leaderPct = (_counts[maxI] / GRID_N * 100).toFixed(0);
+  const ldot = document.getElementById('leader-dot');
+  const lname = document.getElementById('leader-name');
+  const lpct  = document.getElementById('leader-pct');
+  if (ldot)  ldot.style.background = leader.color;
+  if (lname) { lname.textContent = leader.short; lname.style.color = leader.color; }
+  if (lpct)  lpct.textContent = leaderPct + '%';
 }
 
 // ── Strategy picker ───────────────────────────────────────────────────────
 function buildStratPicker() {
   const el = document.getElementById('strat-picker');
   STRATEGIES.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'spick-item';
+
     const btn = document.createElement('button');
     btn.className = 'spick' + (i === paintIdx ? ' active' : '');
-    btn.style.background  = s.color;
+    btn.style.background = s.color;
     btn.style.setProperty('--sc', s.color);
     btn.title = s.name;
-    btn.addEventListener('click', () => {
+
+    const lbl = document.createElement('span');
+    lbl.className = 'spick-label';
+    lbl.textContent = s.short;
+    lbl.style.color = s.color;
+
+    item.appendChild(btn);
+    item.appendChild(lbl);
+    item.addEventListener('click', () => {
       document.querySelectorAll('.spick').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       paintIdx = i;
     });
-    el.appendChild(btn);
+    el.appendChild(item);
   });
 }
 
@@ -107,7 +141,7 @@ function buildPopBars() {
   STRATEGIES.forEach((s, i) => {
     el.insertAdjacentHTML('beforeend', `
       <div class="pop-item" title="${s.name}">
-        <div class="pop-dot" style="background:${s.color};box-shadow:0 0 5px ${s.color}66"></div>
+        <span class="pop-abbr" style="color:${s.color}">${s.short}</span>
         <div class="pop-track">
           <div class="pop-fill" id="pf-${i}" style="background:${s.color}"></div>
         </div>
@@ -153,21 +187,29 @@ function wirePlayControls() {
   btnStep.addEventListener('click', () => {
     step(payoffMod || payoffs, MATCH_ROUNDS);
   });
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); btnPause.click(); }
+    if (e.code === 'ArrowRight') { e.preventDefault(); step(payoffMod || payoffs, MATCH_ROUNDS); }
+  });
 }
 
 // ── Environmental events ──────────────────────────────────────────────────
 function wireEventBtns() {
   document.querySelectorAll('.evt-btn').forEach(btn => {
+    const meta = EVENT_META[btn.dataset.evt];
+    if (meta?.tooltip) btn.dataset.tooltip = meta.tooltip;
     btn.addEventListener('click', () => triggerEvent(btn.dataset.evt, btn));
   });
 }
 
 const EVENT_META = {
-  famine:   { label: '☠  Famine',   sub: 'Cooperation yields less. Defectors surge.',  mod: p => ({ ...p, R: p.R * 0.55, S: 0 }) },
-  paradise: { label: '✦  Paradise', sub: 'Cooperation is richly rewarded.',             mod: p => ({ ...p, R: p.R + 2.5, S: p.S + 1 }) },
-  plague:   { label: '⚗  Plague',   sub: '15% of organisms mutate randomly.',           mod: null },
-  invasion: { label: '⚔  Invasion', sub: 'A wave of strangers floods the south-east.', mod: null },
-  reset:    { label: '↺  Reset',    sub: 'The world begins again.',                     mod: null },
+  famine:   { label: '☠  Famine',   sub: 'Cooperation yields less. Defectors surge.',  tooltip: 'Mutual cooperation earns 45% less for 18s — defectors gain ground.',      mod: p => ({ ...p, R: p.R * 0.55, S: 0 }) },
+  paradise: { label: '✦  Paradise', sub: 'Cooperation is richly rewarded.',            tooltip: 'Cooperation bonus +2.5 pts for 18s — cooperators thrive.',                 mod: p => ({ ...p, R: p.R + 2.5, S: p.S + 1 }) },
+  plague:   { label: '⚗  Plague',   sub: '15% of organisms mutate randomly.',          tooltip: '15% of cells instantly mutate to a random strategy.',                      mod: null },
+  invasion: { label: '⚔  Invasion', sub: 'A wave of strangers floods the south-east.', tooltip: 'The south-east is flooded with a single random strategy.',                 mod: null },
+  reset:    { label: '↺  Reset',    sub: 'The world begins again.',                    tooltip: 'Randomise all territories and restart from scratch.',                       mod: null },
 };
 
 function triggerEvent(name, btn) {
@@ -232,7 +274,19 @@ function toGrid(e) {
 }
 
 function wireCanvas() {
+  const hint = document.getElementById('canvas-hint');
+  const dismissHint = (() => {
+    let done = false;
+    return () => {
+      if (done) return;
+      done = true;
+      hint.classList.add('hidden');
+    };
+  })();
+  setTimeout(dismissHint, 7000);
+
   uiCanvas.addEventListener('mousedown', e => {
+    dismissHint();
     isPainting = true;
     const [cx, cy] = toGrid(e);
     paintCircle(cx, cy, paintIdx, brushRadius);

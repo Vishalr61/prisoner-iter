@@ -222,6 +222,117 @@ html, body {
   to   { opacity: 1; transform: translate(-50%, -50%); }
 }
 
+/* ── Strategy picker labels ────────────────────────────────────────────── */
+.spick-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; flex-shrink: 0;
+}
+.spick-label {
+  font-family: var(--mono); font-size: 8px; font-weight: 600;
+  letter-spacing: 0.3px; text-align: center; pointer-events: none;
+  opacity: 0.75;
+}
+
+/* ── Pop bar abbreviations ─────────────────────────────────────────────── */
+.pop-abbr {
+  font-family: var(--mono); font-size: 8px; font-weight: 600;
+  min-width: 28px; flex-shrink: 0; letter-spacing: 0.3px;
+}
+
+/* ── Leader display ────────────────────────────────────────────────────── */
+#leader-wrap {
+  display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+  padding: 4px 10px; border-radius: 6px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+}
+.leader-arrow { font-size: 9px; color: var(--dim); }
+.leader-dot   { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.leader-name  { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+.leader-pct   { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+
+/* ── Event tooltips ────────────────────────────────────────────────────── */
+.evt-btn { position: relative; }
+.evt-btn::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%);
+  background: rgba(7,7,26,0.96); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+  padding: 6px 10px; font-size: 11px; color: var(--text);
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity .2s; z-index: 20;
+}
+.evt-btn:hover::after { opacity: 1; }
+
+/* ── Canvas hint ───────────────────────────────────────────────────────── */
+#canvas-hint {
+  position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 5; pointer-events: none;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(7,7,26,0.76); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 8px 18px; font-size: 12px; color: var(--dim);
+  transition: opacity 1s ease; white-space: nowrap;
+}
+#canvas-hint.hidden { opacity: 0; }
+.hint-sep { color: rgba(255,255,255,0.2); }
+
+/* ── Intro overlay ─────────────────────────────────────────────────────── */
+#intro-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(7,7,26,0.84); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  animation: intro-fade .4s ease;
+}
+#intro-overlay.hidden { display: none; }
+
+.intro-card {
+  max-width: 480px; width: 90%;
+  background: rgba(12,12,30,0.97);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 36px 40px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.intro-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  color: var(--accent); text-transform: uppercase;
+}
+.intro-title {
+  font-size: 34px; font-weight: 700; color: #fff;
+  letter-spacing: -1px; line-height: 1.1; margin-top: -4px;
+}
+.intro-body {
+  font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.65;
+}
+.intro-body em {
+  color: rgba(255,255,255,0.85); font-style: normal; font-weight: 500;
+}
+.intro-tip {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 14px 16px;
+  font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.55;
+}
+.intro-tip-label {
+  display: block; font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
+}
+#intro-start {
+  margin-top: 4px; padding: 12px 24px; border-radius: 10px;
+  background: var(--accent); border: none; color: #fff;
+  font-size: 15px; font-weight: 600; cursor: pointer; align-self: flex-start;
+  transition: background .15s, transform .15s;
+}
+#intro-start:hover { background: #9080ff; transform: translateY(-1px); }
+#intro-start:active { transform: translateY(0); }
+.intro-keys {
+  font-size: 11px; color: var(--dim); font-family: var(--mono);
+}
+
+@keyframes intro-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* ── Scrollbar ─────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }

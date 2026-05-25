@@ -22,6 +22,12 @@
       <span id="gen-num">0</span>
     </div>
     <div class="pop-bars" id="pop-bars"></div>
+    <div id="leader-wrap">
+      <span class="leader-arrow">▲</span>
+      <span id="leader-dot" class="leader-dot"></span>
+      <span id="leader-name" class="leader-name">—</span>
+      <span id="leader-pct" class="leader-pct"></span>
+    </div>
     <div class="play-wrap">
       <button class="ctrl-btn" id="btn-pause" title="Pause / Play">⏸</button>
       <button class="ctrl-btn" id="btn-step"  title="Step one generation">⏭</button>
@@ -55,8 +61,38 @@
     </div>
   </div>
 
+  <div id="canvas-hint">
+    <span>Hover any territory to inspect it</span>
+    <span class="hint-sep">·</span>
+    <span>Click and drag to paint</span>
+  </div>
+
   <div id="inspector" style="display:none"></div>
   <div id="evt-flash" style="display:none"></div>
+
+  <!-- ── Intro overlay ─────────────────────────────────────────────────── -->
+  <div id="intro-overlay">
+    <div class="intro-card">
+      <div class="intro-eyebrow">Spatial Prisoner's Dilemma</div>
+      <h1 class="intro-title">Primordial Arena</h1>
+      <p class="intro-body">
+        Every territory is an organism with a <em>strategy</em> — cooperate with
+        neighbors or betray them. Each generation, organisms compete against all 8
+        neighbors. The highest scorer spreads its strategy to surrounding cells.
+      </p>
+      <p class="intro-body">
+        Watch cooperation and betrayal fight for dominance across thousands of generations.
+      </p>
+      <div class="intro-tip">
+        <span class="intro-tip-label">Try this</span>
+        Paint a blob of <strong style="color:#B83535">Always Defect</strong> into
+        <strong style="color:#3D6FB5">Tit for Tat</strong> territory —
+        watch the containment wall form.
+      </div>
+      <button id="intro-start">Start Watching →</button>
+      <div class="intro-keys">Space to pause &nbsp;·&nbsp; → to step one generation</div>
+    </div>
+  </div>
 
 </div>
 <script type="module" src="js/main.js"></script>
