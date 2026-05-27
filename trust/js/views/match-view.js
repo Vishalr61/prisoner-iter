@@ -99,7 +99,7 @@ function bumpScore(selector, newValue) {
 
 function showToken(who, move) {
   const token = document.querySelector(`#view-match .move-token[data-side="${who}"]`);
-  token.textContent  = '';
+  token.textContent  = move === 'C' ? 'Share' : 'Take';
   token.className    = `move-token ${move === 'C' ? 'share' : 'take'}`;
   token.dataset.side = who;
   requestAnimationFrame(() => requestAnimationFrame(() => token.classList.add('shown')));

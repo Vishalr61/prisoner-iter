@@ -541,23 +541,16 @@ h1, h2, .heading {
 .move-token {
   width: 68px;
   height: 68px;
-  border-radius: 50%;
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1rem;
+  font-weight: 600;
   opacity: 0;
   transform: translateY(6px);
   transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.move-token.share::after,
-.move-token.take::after {
-  content: '';
-  display: block;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
 }
 
 .move-token.shown {
@@ -567,7 +560,7 @@ h1, h2, .heading {
 
 .move-token.share { background: rgba(95, 184, 120, 0.22); color: var(--share); border: 1.5px solid rgba(95, 184, 120, 0.5); box-shadow: 0 4px 20px rgba(95, 184, 120, 0.2); }
 .move-token.take  { background: rgba(210, 75, 75, 0.22);  color: var(--take);  border: 1.5px solid rgba(210, 75, 75, 0.5); box-shadow: 0 4px 20px rgba(210, 75, 75, 0.2); }
-.move-token.empty { background: var(--surface); border: 1.5px solid var(--border); opacity: 0.4; transform: none; }
+.move-token.empty { background: var(--surface); border: 1.5px solid var(--border); }
 
 .move-token.thinking { animation: tokenPulse 0.4s ease-in-out infinite; }
 
