@@ -3,11 +3,15 @@ import { buildSilhouette } from './silhouette.js';
 import { initColdOpen, initDilemma } from './views/intro.js';
 import { initMatchView, startMatch } from './views/match-view.js';
 import { initSummaryView, showSummary } from './views/summary-view.js';
+import { initRevealView, showReveal } from './views/reveal-view.js';
 import { getSavedProgress, clearProgress, markCampaignDone } from './progress.js';
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
-const VIEWS = ['cold-open', 'dilemma', 'intro-card', 'match', 'summary', 'campaign-end', 'reveal'];
+const VIEWS = [
+  'cold-open', 'dilemma', 'intro-card', 'match',
+  'summary', 'campaign-end', 'reveal', 'evolution',
+];
 
 export function navigate(viewName, params = {}) {
   VIEWS.forEach(v => document.getElementById(`view-${v}`)?.classList.remove('active'));
@@ -31,7 +35,7 @@ export function navigate(viewName, params = {}) {
   }
 
   if (viewName === 'reveal') {
-    renderReveal();
+    showReveal();
   }
 }
 
@@ -47,25 +51,6 @@ function renderIntroCard(charIndex) {
   el.querySelector('[data-action="begin-match"]').onclick = () => startMatch(charIndex);
 }
 
-// ── Reveal screen ─────────────────────────────────────────────────────────────
-
-function renderReveal() {
-  const listEl = document.getElementById('reveal-list');
-  listEl.innerHTML = '';
-  CHARACTERS.forEach(char => {
-    const item = document.createElement('div');
-    item.className = 'reveal-item';
-    item.innerHTML = `
-      <div class="reveal-pip" style="background:${char.color}"></div>
-      <div class="reveal-item-body">
-        <span class="reveal-char-name">${char.name}</span>
-        <span class="reveal-strategy-name">${char.revealName}</span>
-        ${char.revealNote ? `<p class="reveal-note">${char.revealNote}</p>` : ''}
-      </div>`;
-    listEl.appendChild(item);
-  });
-}
-
 // ── Boot & resume ─────────────────────────────────────────────────────────────
 
 function boot() {
@@ -73,26 +58,20 @@ function boot() {
   initDilemma(navigate);
   initMatchView(navigate);
   initSummaryView(navigate);
+  initRevealView(navigate);
 
-  // Campaign-end "play again" button
-  document.getElementById('view-campaign-end')
-    ?.querySelector('[data-action="play-again"]')
-    ?.addEventListener('click', () => {
-      clearProgress();
-      navigate('cold-open');
-    });
-
-  // Campaign-end "reveal" button
-  document.getElementById('view-campaign-end')
-    ?.querySelector('[data-action="reveal"]')
+  // Campaign-end buttons
+  const campaignEnd = document.getElementById('view-campaign-end');
+  campaignEnd?.querySelector('[data-action="reveal"]')
     ?.addEventListener('click', () => navigate('reveal'));
+  campaignEnd?.querySelector('[data-action="play-again"]')
+    ?.addEventListener('click', () => { clearProgress(); navigate('cold-open'); });
 
   // Resume from saved progress
   const saved = getSavedProgress();
   if (saved?.done) {
     navigate('campaign-end');
   } else if (saved?.charIndex !== undefined) {
-    // Resume at the start of wherever they left off
     navigate('intro-card', { characterIndex: saved.charIndex });
   } else {
     navigate('cold-open');

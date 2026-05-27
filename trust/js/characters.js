@@ -15,7 +15,7 @@ export const CHARACTERS = [
       "He never asked you to stop.",
     ],
     revealName: 'Always Cooperate',
-    revealNote: null,
+    revealExplanation: "Sam shared every round, no matter what. Always Cooperate. It's the most generous strategy. It's also the easiest to exploit. The world is harder on Sams than it should be.",
   },
   {
     id: 'marcus',
@@ -33,7 +33,7 @@ export const CHARACTERS = [
       "Nothing you did was going to change the math.",
     ],
     revealName: 'Always Defect',
-    revealNote: null,
+    revealExplanation: "Marcus took every round, no matter what. Always Defect. It can't be reasoned with, but it also can't build anything. Against another AllD, the result is mutual destruction. The strategies that do best long-term all start by cooperating.",
   },
   {
     id: 'maya',
@@ -51,7 +51,7 @@ export const CHARACTERS = [
       "You took, so she took. You gave her nothing to work with. She would have cooperated every round if you had started differently. The first move was always yours.",
     ],
     revealName: 'Tit-for-Tat',
-    revealNote: null,
+    revealExplanation: "Maya did whatever you did last round. Tit-for-Tat. Cooperate first, then mirror. It won the first computer tournament of this kind, run by Robert Axelrod in 1980. Simple, fair, and hard to exploit.",
   },
   {
     id: 'theo',
@@ -69,7 +69,7 @@ export const CHARACTERS = [
       "After that, nothing you did mattered. There was no apology that would have worked. He had already closed the door.",
     ],
     revealName: 'Grim Trigger',
-    revealNote: null,
+    revealExplanation: "Theo cooperated until you betrayed him, then defected forever. Grim Trigger. It cooperates, until it doesn't. After that, the door is closed.",
   },
   {
     id: 'naomi',
@@ -87,7 +87,7 @@ export const CHARACTERS = [
       "She wasn't naive — she was watching the whole time. She just gave you room to be a person. Until you weren't.",
     ],
     revealName: 'Tit-for-Two-Tats',
-    revealNote: null,
+    revealExplanation: "Naomi needed two defections in a row before she'd retaliate. Tit-for-Two-Tats. More forgiving than the mirror. In the real world, where people make mistakes, that forgiveness often makes it more stable.",
   },
   {
     id: 'ren',
@@ -105,6 +105,6 @@ export const CHARACTERS = [
       "Whatever worked, they kept. Whatever didn't, they dropped. You made taking work, so they took.",
     ],
     revealName: 'Win-Stay, Lose-Shift',
-    revealNote: "Ren played something called Win-Stay, Lose-Shift. If a round went well for them — they got a high score — they did the same thing next time. If it went badly, they switched. Not watching you. Not punishing you. Just tracking outcomes and adjusting. It's adaptive, not reactive. And it's more successful than you might expect.",
+    revealExplanation: "Ren used Win-Stay, Lose-Shift. If a round went well, repeat it. If it went badly, switch. Not watching you — watching outcomes. It's adaptive, not reactive, and it's surprisingly robust against both cooperators and defectors.",
   },
 ];
