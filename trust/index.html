@@ -60,6 +60,7 @@
 
       <!-- Question (hidden after choice) -->
       <div class="dilemma-question-wrap">
+        <p class="dilemma-payoff-hint">Both share: 3 pts each &nbsp;·&nbsp; You take, they share: 5 / 0 &nbsp;·&nbsp; Both take: 1 each</p>
         <p class="dilemma-question">What do you do?</p>
       </div>
     </div>
@@ -179,21 +180,8 @@
   <!-- ── View: Reveal — DOM built by reveal-view.js ──────────────────────── -->
   <section id="view-reveal" class="view" role="main"></section>
 
-  <!-- ── View: Evolution placeholder (Session 4) ──────────────────────────── -->
-  <section id="view-evolution" class="view" role="main">
-    <div class="char-intro-body" style="gap:20px; text-align:center;">
-      <h1 class="heading" style="font-size:clamp(1.4rem,6vw,2rem);">
-        Coming soon.
-      </h1>
-      <p class="char-intro-text" style="color:var(--fg-dim);">
-        The evolution stage is Session 4.
-      </p>
-      <div style="display:flex; gap:20px; margin-top:20px;">
-        <a href="../index.html" class="btn btn-ghost" style="text-decoration:none;">Tournament tool →</a>
-        <a href="../spatial/" class="btn btn-ghost" style="text-decoration:none;">Spatial arena →</a>
-      </div>
-    </div>
-  </section>
+  <!-- ── View: Evolution — DOM built by evolution-view.js ──────────────────── -->
+  <section id="view-evolution" class="view" role="main"></section>
 
   <script type="module" src="js/main.js"></script>
 </body>

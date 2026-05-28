@@ -4,7 +4,9 @@ import { initColdOpen, initDilemma } from './views/intro.js';
 import { initMatchView, startMatch } from './views/match-view.js';
 import { initSummaryView, showSummary } from './views/summary-view.js';
 import { initRevealView, showReveal } from './views/reveal-view.js';
+import { initEvolutionView, showEvolution } from './views/evolution-view.js';
 import { getSavedProgress, clearProgress, markCampaignDone } from './progress.js';
+import { initDevMenu } from './dev-menu.js'; // DEV ONLY
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +39,10 @@ export function navigate(viewName, params = {}) {
   if (viewName === 'reveal') {
     showReveal();
   }
+
+  if (viewName === 'evolution') {
+    showEvolution();
+  }
 }
 
 // ── Intro card ────────────────────────────────────────────────────────────────
@@ -61,6 +67,8 @@ function boot() {
   initMatchView(navigate);
   initSummaryView(navigate);
   initRevealView(navigate);
+  initEvolutionView(navigate);
+  initDevMenu(); // DEV ONLY
 
   // Campaign-end buttons
   const campaignEnd = document.getElementById('view-campaign-end');
