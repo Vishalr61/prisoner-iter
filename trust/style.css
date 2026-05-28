@@ -1135,7 +1135,7 @@ h1, h2, .heading {
   height: 100%;
   width: 0;
   border-radius: 2px;
-  transition: width 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: width 0.1s linear;
   opacity: 0.7;
 }
 
@@ -1155,6 +1155,41 @@ h1, h2, .heading {
 .evo-actions.shown {
   opacity: 1;
   pointer-events: auto;
+}
+
+.evo-round-counter {
+  transition: opacity 0.3s ease;
+}
+
+.evo-insight {
+  padding: 32px 24px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  flex-shrink: 0;
+}
+
+.evo-insight-line {
+  display: none;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(0.95rem, 3.5vw, 1.05rem);
+  line-height: 1.7;
+  color: var(--fg-dim);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.evo-insight-line.shown {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.evo-thesis {
+  color: var(--fg);
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
 }
 
 /* ── Utility ───────────────────────────────────────────────────────────────── */
