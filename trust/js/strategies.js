@@ -36,4 +36,22 @@ export const STRATEGIES = {
       return won ? lastMy : (lastMy === 'C' ? 'D' : 'C');
     },
   },
+
+  rand: {
+    move: () => Math.random() < 0.5 ? 'C' : 'D',
+  },
+
+  gtft: {
+    // Like TfT but forgives ~10% of defections — escapes retaliation spirals
+    move: (_my, their) => {
+      if (their.length === 0) return 'C';
+      if (their[their.length - 1] === 'D') return Math.random() < 0.1 ? 'C' : 'D';
+      return 'C';
+    },
+  },
+
+  stft: {
+    // Suspicious TfT — defects on move 1, then mirrors
+    move: (_my, their) => their.length === 0 ? 'D' : their[their.length - 1],
+  },
 };

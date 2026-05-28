@@ -1,6 +1,16 @@
 import { CHARACTERS } from '../characters.js';
 import { STRATEGIES } from '../strategies.js';
 
+// Extra strategies not in the campaign — added to stress-test the reciprocators
+const EXTRA = [
+  { id: 'gtft', name: 'Generous TfT',   revealName: 'Forgives mistakes',  color: '#2dd4bf', strategyId: 'gtft' },
+  { id: 'stft', name: 'Suspicious TfT', revealName: 'Defects first',       color: '#f43f5e', strategyId: 'stft' },
+  { id: 'rand', name: 'Random',         revealName: '50/50 coin flip',     color: '#94a3b8', strategyId: 'rand' },
+];
+
+const ALL = [...CHARACTERS, ...EXTRA];
+const MATCH_COUNT = ALL.length * (ALL.length - 1) / 2;
+
 const ROUNDS = 50;
 // Slow first 6 rounds (Marcus leads briefly) then fast — total ~2.1s
 const ROUND_DELAYS = (() => {
@@ -16,14 +26,11 @@ const SIM_DURATION = ROUND_DELAYS[ROUNDS - 1] + (ROUNDS < 6 ? 120 : 28);
 const PAYOFFS      = { R: 3, T: 5, P: 1, S: 0 };
 
 const INSIGHTS = [
-  { charId: 'maya',
-    text: "Maya wasn't the nicest player here — Sam was. She wasn't the harshest — Theo was. She just matched whoever she was playing. That's all it took." },
-  { charId: 'sam',
-    text: "Sam came fifth. He shared every round, with everyone, no matter what. That's a gift to anyone willing to take it. Marcus took it." },
-  { charId: 'marcus',
-    text: "Marcus came last. The only player he beat was Sam." },
+  { text: "Generous TfT won. It plays like Maya — cooperate first, mirror back — but occasionally forgives a defection. In a noisy world, that grace outperformed strict accounting." },
+  { text: "Theo came fifth. One random defection triggered permanent retaliation. Grim Trigger can't tell a mistake from a betrayal. The pool was noisy enough to punish that." },
+  { text: "Marcus came last. The only strategy that never cooperated with anyone, not once." },
   { thesis: true,
-    text: "The lesson isn't 'trust people.' It's 'cooperate with people who cooperate back — and stop when they don't.'" },
+    text: "The lesson isn't 'reciprocate.' It's 'reciprocate, but leave room for mistakes. The real world is noisier than any of your six matches.'" },
 ];
 
 let go = null;
@@ -43,12 +50,9 @@ export function showEvolution() {
 
 function computeHistories() {
   const matches = [];
-  for (let i = 0; i < CHARACTERS.length; i++) {
-    for (let j = i + 1; j < CHARACTERS.length; j++) {
-      const { histA, histB } = playMatch(
-        CHARACTERS[i].strategyId,
-        CHARACTERS[j].strategyId,
-      );
+  for (let i = 0; i < ALL.length; i++) {
+    for (let j = i + 1; j < ALL.length; j++) {
+      const { histA, histB } = playMatch(ALL[i].strategyId, ALL[j].strategyId);
       matches.push({ i, j, histA, histB });
     }
   }
@@ -72,10 +76,10 @@ function playMatch(idA, idB) {
 function buildTimeline(matches) {
   return Array.from({ length: ROUNDS }, (_, r) => {
     const s = {};
-    CHARACTERS.forEach(c => { s[c.id] = 0; });
+    ALL.forEach(c => { s[c.id] = 0; });
     matches.forEach(({ i, j, histA, histB }) => {
-      s[CHARACTERS[i].id] += histA[r];
-      s[CHARACTERS[j].id] += histB[r];
+      s[ALL[i].id] += histA[r];
+      s[ALL[j].id] += histB[r];
     });
     return s;
   });
@@ -95,13 +99,13 @@ function buildDOM(el) {
     <div class="evo-header">
       <h1 class="evo-title">Now they compete.</h1>
       <p class="evo-subtitle">
-        <span>15 matches · 50 rounds each</span>
+        <span>${MATCH_COUNT} matches · 50 rounds each</span>
         <span class="evo-round-counter"> · Round <span class="evo-round-num">0</span></span>
       </p>
     </div>
 
     <div class="evo-board">
-      ${CHARACTERS.map(c => `
+      ${ALL.map(c => `
         <div class="evo-row" data-id="${c.id}" style="--char-color:${c.color}">
           <div class="evo-row-meta">
             <span class="evo-rank"></span>
