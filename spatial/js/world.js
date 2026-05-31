@@ -1,4 +1,5 @@
-import { STRATEGIES } from './strategies.js';
+import { STRATEGIES, COMPILED, SI } from './strategies.js';
+import { makeRng } from '../../core/rng.js';
 
 export const GRID_W = 160;
 export const GRID_H = 120;
@@ -16,18 +17,30 @@ export const resetGeneration = () => { _gen = 0; };
 const NB_DX = [-1, 0, 1, -1, 1, -1, 0, 1];
 const NB_DY = [-1, -1, -1,  0, 0,  1, 1, 1];
 
-// Pre-allocated match history (avoids GC churn)
+// Pre-allocated match buffers + contexts (avoids GC churn — this loop runs
+// ~153,600 times per generation on a 160×120 grid).
 const _mA = [];
 const _mB = [];
+const _ctxA = { myMoves: _mA, theirMoves: _mB, round: 0, totalRounds: 0, rng: null };
+const _ctxB = { myMoves: _mB, theirMoves: _mA, round: 0, totalRounds: 0, rng: null };
 
 function scoreAvsB(a, b, rounds, pay) {
   _mA.length = 0;
   _mB.length = 0;
+  // Fresh RNG per match so probabilistic strategies (rand, gtft) draw fresh
+  // randomness, preserving the visual variety of the original spatial sim.
+  _ctxA.rng = makeRng((Math.random() * 0xFFFFFFFF) | 0);
+  _ctxB.rng = makeRng((Math.random() * 0xFFFFFFFF) | 0);
+  _ctxA.totalRounds = rounds;
+  _ctxB.totalRounds = rounds;
+
+  const sa = COMPILED[a], sb = COMPILED[b];
   let s = 0;
-  const sa = STRATEGIES[a], sb = STRATEGIES[b];
   for (let r = 0; r < rounds; r++) {
-    const ma = sa.move(_mA, _mB);
-    const mb = sb.move(_mB, _mA);
+    _ctxA.round = r;
+    _ctxB.round = r;
+    const ma = sa.move(_ctxA);
+    const mb = sb.move(_ctxB);
     if      (ma === 'C' && mb === 'C') s += pay.R;
     else if (ma === 'C' && mb === 'D') s += pay.S;
     else if (ma === 'D' && mb === 'C') s += pay.T;
@@ -44,9 +57,6 @@ export function initRandom() {
   scores.fill(0);
   _gen = 0;
 }
-
-// Strategy indices (fixed by order in strategies.js)
-const SI = { allC: 0, allD: 1, tft: 2, tf2t: 3, grim: 4, pvlv: 5, rand: 6, gtft: 7, stft: 8 };
 
 export function initScenario(name) {
   scores.fill(0);

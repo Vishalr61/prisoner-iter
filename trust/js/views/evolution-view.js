@@ -1,5 +1,22 @@
 import { CHARACTERS } from '../characters.js';
-import { STRATEGIES } from '../strategies.js';
+import { REGISTRY, CANONICAL_TOURNAMENT_SEED } from '../../../core/registry.js';
+import { compileStrategy } from '../../../core/strategy.js';
+import { runMatch }    from '../../../core/match.js';
+import { classify }    from '../../../core/classify.js';
+import { getSavedProgress } from '../progress.js';
+
+// The INSIGHTS array below was written for tournament seed=1, which produces
+// a specific ranking (Theo always 4th, Marcus always last, top three rotating
+// among TfT/Tf2T/GTfT). If this assert trips, re-run core/__seed_sweep.mjs,
+// re-verify every INSIGHTS line, then update this expected value.
+const COPY_EXPECTS_SEED = 1;
+if (CANONICAL_TOURNAMENT_SEED !== COPY_EXPECTS_SEED) {
+  throw new Error(
+    `Evolution INSIGHTS copy was written for tournament seed=${COPY_EXPECTS_SEED}, ` +
+    `but core/registry now exports CANONICAL_TOURNAMENT_SEED=${CANONICAL_TOURNAMENT_SEED}. ` +
+    `Re-verify each insight line in evolution-view.js, then update COPY_EXPECTS_SEED.`
+  );
+}
 
 // Extra strategies not in the campaign — added to stress-test the reciprocators
 const EXTRA = [
@@ -35,15 +52,32 @@ const ROUND_DELAYS = (() => {
   return delays;
 })();
 const SIM_DURATION = ROUND_DELAYS[ROUNDS - 1] + (ROUNDS < 6 ? 120 : 28);
-const PAYOFFS      = { R: 3, T: 5, P: 1, S: 0 };
 
 const INSIGHTS = [
-  { text: "Generous TfT won. It plays like Maya — cooperate first, mirror back — but occasionally forgives a defection. In a noisy world, that grace outperformed strict accounting." },
-  { text: "Theo came fifth. One random defection triggered permanent retaliation. Grim Trigger can't tell a mistake from a betrayal. The pool was noisy enough to punish that." },
+  { text: "The top three were all the same kind. Cooperate first. Mirror back. Forgive small slights. When unpredictable players entered the field, that grace beat strict accounting." },
+  { text: "Theo finished in the middle of the pack — behind every strategy that knew how to forgive. Against Random's occasional defections, his permanent retaliation locked him into losing. Grim Trigger can't tell a mistake from a betrayal." },
   { text: "Marcus came last. The only strategy that never cooperated with anyone, not once." },
   { thesis: true,
     text: "The lesson isn't 'reciprocate.' It's 'reciprocate, but leave room for mistakes. The real world is noisier than any of your six matches.'" },
 ];
+
+// Mirror lines, keyed by the strategy id the classifier returns.
+// Fallback fires when the player's moves don't match any character cleanly.
+const MIRROR_LINES = {
+  allC:   "You played like Sam. You shared every time, even when it cost you.",
+  allD:   "You played like Marcus. You took every round. You walked away with more, but you built nothing.",
+  tft:    "You played like Maya. You mirrored what came at you. That's how she won.",
+  grim:   "You played like Theo. One betrayal was enough for you, too.",
+  tf2t:   "You played like Naomi. You let small things go. Twice, if needed.",
+  pavlov: "You played like Ren. You stayed with what worked. Switched when it didn't. You weren't watching them, you were watching what happened.",
+};
+const MIRROR_FALLBACK = "Your moves didn't match any of them cleanly. Maybe that's the lesson.";
+
+function buildMirrorLine() {
+  const saved = getSavedProgress();
+  const result = classify(saved?.campaign?.playerHistory);
+  return result.character ? MIRROR_LINES[result.character] : MIRROR_FALLBACK;
+}
 
 let go = null;
 
@@ -72,17 +106,13 @@ function computeHistories() {
 }
 
 function playMatch(idA, idB) {
-  const mA = [], mB = [], histA = [], histB = [];
-  let sa = 0, sb = 0;
-  for (let r = 0; r < ROUNDS; r++) {
-    const a = STRATEGIES[idA].move(mA, mB);
-    const b = STRATEGIES[idB].move(mB, mA);
-    mA.push(a); mB.push(b);
-    const [pa, pb] = score(a, b);
-    sa += pa; sb += pb;
-    histA.push(sa); histB.push(sb);
-  }
-  return { histA, histB };
+  const stratA = compileStrategy(REGISTRY[idA]);
+  const stratB = compileStrategy(REGISTRY[idB]);
+  const result = runMatch(stratA, stratB, { rounds: ROUNDS, masterSeed: CANONICAL_TOURNAMENT_SEED });
+  return {
+    histA: result.history.map(h => h.aCumulative),
+    histB: result.history.map(h => h.bCumulative),
+  };
 }
 
 function buildTimeline(matches) {
@@ -95,13 +125,6 @@ function buildTimeline(matches) {
     });
     return s;
   });
-}
-
-function score(a, b) {
-  if (a === 'C' && b === 'C') return [PAYOFFS.R, PAYOFFS.R];
-  if (a === 'C' && b === 'D') return [PAYOFFS.S, PAYOFFS.T];
-  if (a === 'D' && b === 'C') return [PAYOFFS.T, PAYOFFS.S];
-  return [PAYOFFS.P, PAYOFFS.P];
 }
 
 // ── DOM ───────────────────────────────────────────────────────────────────────
@@ -152,12 +175,17 @@ function buildDOM(el) {
       ${INSIGHTS.map((ins, i) => `
         <p class="evo-insight-line${ins.thesis ? ' evo-thesis' : ''}" data-index="${i}">${ins.text}</p>
       `).join('')}
+      <p class="evo-insight-line evo-mirror" data-index="${INSIGHTS.length}">${buildMirrorLine()}</p>
     </div>
 
     <div class="evo-actions">
-      <button class="btn btn-ghost" data-action="play-again">Play again</button>
+      <button class="btn btn-primary" data-action="build">Now build one →</button>
+      <button class="btn btn-ghost"   data-action="play-again">Play again</button>
     </div>
   `;
+
+  el.querySelector('[data-action="build"]')
+    ?.addEventListener('click', () => go('builder'));
 
   el.querySelector('[data-action="play-again"]')
     ?.addEventListener('click', () => {
@@ -217,8 +245,11 @@ function runSimulation(el, timeline) {
 
   // Stagger insight lines (two-step: display then opacity, so transition fires)
   const insightStart = sortAt + 1100;
-  el.querySelectorAll('.evo-insight-line').forEach((line, i) => {
-    const extraPause = line.classList.contains('evo-thesis') ? 400 : 0;
+  const insightLines = el.querySelectorAll('.evo-insight-line');
+  insightLines.forEach((line, i) => {
+    const extraPause = line.classList.contains('evo-mirror') ? 700
+                     : line.classList.contains('evo-thesis') ? 400
+                     : 0;
     setTimeout(() => {
       line.style.display = 'block';
       requestAnimationFrame(() => requestAnimationFrame(() => line.classList.add('shown')));
@@ -226,7 +257,7 @@ function runSimulation(el, timeline) {
   });
 
   // Play again
-  const actionsAt = insightStart + INSIGHTS.length * 700 + 700;
+  const actionsAt = insightStart + insightLines.length * 700 + 1100;
   setTimeout(() => {
     el.querySelector('.evo-actions').classList.add('shown');
   }, actionsAt);

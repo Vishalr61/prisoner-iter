@@ -18,7 +18,7 @@ export function initMatchView(navigateFn) {
 export function startMatch(idx) {
   charIndex = idx;
   character = CHARACTERS[idx];
-  match     = createMatch(character.strategyId);
+  match     = createMatch(character.strategyId, character.rounds);
   busy      = false;
 
   const el = document.getElementById('view-match');
@@ -74,7 +74,7 @@ function handleMove(humanMove) {
 
     if (result.round >= character.rounds) {
       const coopRate = history.filter(r => r.humanMove === 'C').length / history.length;
-      markCompleted(character.id, coopRate);
+      markCompleted(character.id, coopRate, history);
       setTimeout(() => go('summary', { charIndex, match }), 900);
     } else {
       setTimeout(() => {

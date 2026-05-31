@@ -1,0 +1,9 @@
+{
+  "name": "ipd-tournament",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "serve .",
+    "test":  "for f in core/__*.mjs; do echo \"\\n── $f ──\"; node \"$f\" || exit 1; done"
+  }
+}

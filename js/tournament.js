@@ -1,3 +1,10 @@
+import { REGISTRY }                         from '../core/registry.js';
+import { compileStrategy }                  from '../core/strategy.js';
+import { runMatch as coreRunMatch }         from '../core/match.js';
+
+// Fixed master seed → root tournament is reproducible across reloads.
+const MASTER_SEED = 1;
+
 export function getPayoffs() {
   return {
     R: +document.getElementById('pay-R').value,
@@ -7,28 +14,17 @@ export function getPayoffs() {
   };
 }
 
-export function runMatch(stratA, stratB, rounds, payoffs) {
-  const { R, T, P, S } = payoffs;
-  const mA = [], mB = [];
-  let sA = 0, sB = 0;
-  const roundLog = [];
-
-  for (let r = 0; r < rounds; r++) {
-    const ma = stratA.move(mA, mB);
-    const mb = stratB.move(mB, mA);
-
-    let pa, pb;
-    if      (ma === 'C' && mb === 'C') { pa = R; pb = R; }
-    else if (ma === 'C' && mb === 'D') { pa = S; pb = T; }
-    else if (ma === 'D' && mb === 'C') { pa = T; pb = S; }
-    else                               { pa = P; pb = P; }
-
-    sA += pa; sB += pb;
-    mA.push(ma); mB.push(mb);
-    roundLog.push({ ma, mb, pa, pb });
-  }
-
-  return { scoreA: sA / rounds, scoreB: sB / rounds, roundLog };
+// Adapt core MatchResult → root's historical shape:
+//   { scoreA, scoreB: average per round; roundLog: [{ ma, mb, pa, pb }] }
+function runMatch(stratA, stratB, rounds, payoffs) {
+  const cA = compileStrategy(REGISTRY[stratA.id]);
+  const cB = compileStrategy(REGISTRY[stratB.id]);
+  const r  = coreRunMatch(cA, cB, { rounds, payoffs, masterSeed: MASTER_SEED });
+  return {
+    scoreA: r.finalScoreA / rounds,
+    scoreB: r.finalScoreB / rounds,
+    roundLog: r.history.map(h => ({ ma: h.aMove, mb: h.bMove, pa: h.aScore, pb: h.bScore })),
+  };
 }
 
 export function runTournament(strategies, rounds, payoffs) {
@@ -47,7 +43,6 @@ export function runTournament(strategies, rounds, payoffs) {
       scores[i][j] = result.scoreA;
 
       if (i !== j) {
-        // Store reverse view without re-running (deterministic strategies only differ by RNG)
         const revResult = {
           scoreA: result.scoreB,
           scoreB: result.scoreA,
