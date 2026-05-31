@@ -57,9 +57,22 @@ const DEFAULT_STATE = () => ({
   startedFromPresetId: null,
 });
 
+// Curated palette — 6 families × 3 weights. Familiar character colors
+// are included so a preset's swatch is still selectable, but the wider
+// palette removes the "everything looks like a cast member" constraint.
 const COLOR_SWATCHES = [
-  '#2dd4bf', '#f43f5e', '#f0c674', '#5e8ca8', '#c87635',
-  '#a085bd', '#4c9c6a', '#94a3b8', '#a23b3b',
+  // teals / greens
+  '#2dd4bf', '#34d399', '#4c9c6a',
+  // blues
+  '#5e8ca8', '#60a5fa', '#3b82f6',
+  // purples
+  '#a085bd', '#a78bfa', '#8b5cf6',
+  // pinks / reds
+  '#f43f5e', '#ec4899', '#a23b3b',
+  // oranges
+  '#fb923c', '#c87635', '#ea580c',
+  // yellows / neutrals
+  '#f0c674', '#fbbf24', '#94a3b8',
 ];
 
 // Character presets — clicking one fills the config + color so the user is

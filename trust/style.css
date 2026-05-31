@@ -1299,6 +1299,37 @@ h1, h2, .heading {
   padding-bottom: 48px;
 }
 
+/* Two-column layout at wide viewports: controls flow on the left,
+   summary + preview pin to the right so the user sees their build
+   running while they edit. Falls back to single-column on narrow
+   viewports — the original flex-column rules still apply there. */
+@media (min-width: 880px) {
+  #view-builder { max-width: 880px; }
+  .bld-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 36px;
+    row-gap: 24px;
+    /* Backfill empty cells so summary/preview slot in alongside
+       identity rather than waiting for the controls row. */
+    grid-auto-flow: dense;
+    align-items: start;
+  }
+  /* Full-width: header, presets, mode toggle, actions, toast */
+  .bld-header,
+  .bld-presets,
+  .bld-mode-toggle,
+  .bld-actions,
+  .bld-toast            { grid-column: 1 / -1; }
+  /* Left column: identity + controls (the inputs) */
+  .bld-identity,
+  .bld-controls         { grid-column: 1; }
+  /* Right column: summary + preview (the outputs).
+     Identity is short, so let summary slip into the row beside it. */
+  .bld-summary-card     { grid-column: 2; margin: 0; }
+  .bld-preview          { grid-column: 2; }
+}
+
 .bld-header {
   padding: 0 24px;
 }
