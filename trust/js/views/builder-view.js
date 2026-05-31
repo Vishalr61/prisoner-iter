@@ -51,6 +51,10 @@ const DEFAULT_STATE = () => ({
   rulesError: null,
   // Which preview opponent to play against in the live preview.
   previewOpponentId: 'tft',
+  // Which preset the user started from (or null). The preset chip shows
+  // a "selected" state when this matches, "modified" if state.config has
+  // since drifted from the preset's original config.
+  startedFromPresetId: null,
 });
 
 const COLOR_SWATCHES = [
@@ -127,11 +131,16 @@ function buildDOM(el) {
       <section class="bld-presets">
         <p class="bld-presets-label">Start from someone you know</p>
         <div class="bld-preset-chips">
-          ${CHARACTER_PRESETS.map(c => `
-            <button class="bld-preset-chip" data-preset="${c.id}" style="--preset-color:${c.color}">
-              <span class="bld-preset-pip"></span>${c.name}
-            </button>
-          `).join('')}
+          ${CHARACTER_PRESETS.map(c => {
+            const isActive   = c.id === state.startedFromPresetId;
+            const isModified = isActive && !configsEqual(c.config, state.config);
+            const cls = isModified ? ' modified' : (isActive ? ' selected' : '');
+            return `
+              <button class="bld-preset-chip${cls}" data-preset="${c.id}" style="--preset-color:${c.color}">
+                <span class="bld-preset-pip"></span>${c.name}
+              </button>
+            `;
+          }).join('')}
         </div>
       </section>
 
@@ -239,7 +248,13 @@ function renderSimpleControls() {
     <section class="bld-section bld-forgiveness"></section>
 
     <section class="bld-section">
-      <h2 class="bld-label">Execution noise <span class="bld-pct" data-noise-pct>${pct(state.config.noise)}</span></h2>
+      <h2 class="bld-label">
+        Execution noise
+        <span class="bld-pct-group">
+          <span class="bld-region" data-noise-region>${noiseRegion(state.config.noise)}</span>
+          <span class="bld-pct" data-noise-pct>${pct(state.config.noise)}</span>
+        </span>
+      </h2>
       <p class="bld-teach">Sometimes you mean to share but your hand slips. Game theorists call it <em>noise</em>. Strict strategies get hurt by it. Forgiving ones recover.</p>
       <input class="bld-slider" type="range" min="0" max="0.3" step="0.01"
         value="${state.config.noise}" data-field="noise" />
@@ -321,7 +336,13 @@ function renderConditionalSections(el) {
   // Forgiveness only matters for the classic mirror case
   if (mode === 'opponent-reactive' && reaction === 'mirror') {
     forgEl.innerHTML = `
-      <h2 class="bld-label">Forgiveness <span class="bld-pct" data-forg-pct>${pct(forgiveness)}</span></h2>
+      <h2 class="bld-label">
+        Forgiveness
+        <span class="bld-pct-group">
+          <span class="bld-region" data-forg-region>${forgivenessRegion(forgiveness)}</span>
+          <span class="bld-pct" data-forg-pct>${pct(forgiveness)}</span>
+        </span>
+      </h2>
       <p class="bld-teach">At 10%, this is <em>Generous Tit-for-Tat</em> — Maya, but she lets one defection in ten slide. Often wins against noisy opponents because it doesn't escalate.</p>
       <input class="bld-slider" type="range" min="0" max="0.3" step="0.01"
         value="${forgiveness}" data-field="forgiveness" />
@@ -370,6 +391,7 @@ function wireEvents(el) {
       state.builderMode = 'simple';
       state.rules = null;
       state.rulesError = null;
+      state.startedFromPresetId = preset.id;
       // Don't overwrite a name the user has personalised; only refresh if
       // they're still on the default.
       if (!state.name || state.name === 'Your player' || /^Like /.test(state.name)) {
@@ -522,12 +544,31 @@ function handleConfigChange(el, field, value) {
       String(state.config[c.dataset.field]) === c.dataset.value);
   });
 
-  // Update slider percentage labels
-  el.querySelector('[data-noise-pct]').textContent = pct(state.config.noise);
+  // Update slider percentage + region labels
+  el.querySelector('[data-noise-pct]').textContent    = pct(state.config.noise);
+  el.querySelector('[data-noise-region]').textContent = noiseRegion(state.config.noise);
   const forgPct = el.querySelector('[data-forg-pct]');
-  if (forgPct) forgPct.textContent = pct(state.config.forgiveness);
+  if (forgPct) {
+    forgPct.textContent = pct(state.config.forgiveness);
+    el.querySelector('[data-forg-region]').textContent = forgivenessRegion(state.config.forgiveness);
+  }
+
+  // Mark the active preset chip as "modified" if config has drifted from it.
+  updatePresetChips(el);
 
   refreshPreview(el);
+}
+
+// Reflect the current preset-vs-config relationship on the preset chips.
+// Active chip = the one the user started from; modified = active + edited.
+function updatePresetChips(el) {
+  el.querySelectorAll('[data-preset]').forEach(btn => {
+    const preset = CHARACTER_PRESETS.find(p => p.id === btn.dataset.preset);
+    const isActive   = preset.id === state.startedFromPresetId;
+    const isModified = isActive && !configsEqual(preset.config, state.config);
+    btn.classList.toggle('selected', isActive && !isModified);
+    btn.classList.toggle('modified', isModified);
+  });
 }
 
 // ── Live preview ──────────────────────────────────────────────────────────────
@@ -697,6 +738,26 @@ function behaviorSummary({ opener, mode, reaction, forgiveness, noise }) {
 }
 
 function pct(x) { return `${Math.round(x * 100)}%`; }
+
+// Qualitative regions for the two sliders. Lets the numerical knob read
+// as a named concept rather than just a percentage.
+function forgivenessRegion(v) {
+  if (v < 0.01) return 'Strict';
+  if (v < 0.05) return 'Lenient';
+  if (v < 0.15) return 'Generous TfT';
+  return 'Very forgiving';
+}
+function noiseRegion(v) {
+  if (v < 0.01) return 'Clean';
+  if (v < 0.05) return 'Realistic';
+  if (v < 0.15) return 'Noisy';
+  return 'Chaotic';
+}
+
+// Deep-equal for the config object (all primitive fields).
+function configsEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 
