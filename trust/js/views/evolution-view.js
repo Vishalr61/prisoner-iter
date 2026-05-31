@@ -3,7 +3,7 @@ import { REGISTRY, CANONICAL_TOURNAMENT_SEED } from '../../../core/registry.js';
 import { compileStrategy } from '../../../core/strategy.js';
 import { runMatch }    from '../../../core/match.js';
 import { classify }    from '../../../core/classify.js';
-import { getSavedProgress } from '../progress.js';
+import { getSavedProgress, getUserStrategies, deleteUserStrategy } from '../progress.js';
 
 // The INSIGHTS array below was written for tournament seed=1, which produces
 // a specific ranking (Theo always 4th, Marcus always last, top three rotating
@@ -37,8 +37,28 @@ const EXTRA = [
   },
 ];
 
-const ALL = [...CHARACTERS, ...EXTRA];
-const MATCH_COUNT = ALL.length * (ALL.length - 1) / 2;
+// Canonical cast — fixed. User-built strategies are picked up at view-show
+// time and slot in alongside these. The INSIGHTS copy below talks about the
+// canonical 9-strategy tournament; user strategies appear in the board (so
+// the player sees their build compete) but don't shift the lesson.
+const CANONICAL = [
+  ...CHARACTERS.map(c => ({
+    id: c.id, name: c.name, color: c.color,
+    label: c.revealName,
+    spec: REGISTRY[c.strategyId],
+    isUser: false,
+  })),
+  ...EXTRA.map(e => ({
+    id: e.id, name: e.name, color: e.color,
+    label: e.revealName,
+    spec: REGISTRY[e.strategyId],
+    isUser: false,
+  })),
+];
+
+// Loaded fresh each showEvolution() — includes any user strategies the
+// player has saved.
+let ALL = CANONICAL;
 
 const ROUNDS = 50;
 // Slow first 6 rounds (Marcus leads briefly) then fast — total ~2.1s
@@ -53,10 +73,13 @@ const ROUND_DELAYS = (() => {
 })();
 const SIM_DURATION = ROUND_DELAYS[ROUNDS - 1] + (ROUNDS < 6 ? 120 : 28);
 
+// Insights describe the canonical 9-strategy tournament. They're worded to
+// stay true even when user strategies enter the board — the lesson is about
+// the cast, not the ranking of any one round.
 const INSIGHTS = [
-  { text: "The top three were all the same kind. Cooperate first. Mirror back. Forgive small slights. When unpredictable players entered the field, that grace beat strict accounting." },
-  { text: "Theo finished in the middle of the pack — behind every strategy that knew how to forgive. Against Random's occasional defections, his permanent retaliation locked him into losing. Grim Trigger can't tell a mistake from a betrayal." },
-  { text: "Marcus came last. The only strategy that never cooperated with anyone, not once." },
+  { text: "Among the cast, the strategies that scored best were all the same kind. Cooperate first. Mirror back. Forgive small slights. When unpredictable players entered the field, that grace beat strict accounting." },
+  { text: "Theo finished behind every cast member that knew how to forgive. Against Random's occasional defections, his permanent retaliation locked him into losing. Grim Trigger can't tell a mistake from a betrayal." },
+  { text: "Marcus never cooperated with anyone, not once. That's how he ends up at the bottom of any pool that knows how to build." },
   { thesis: true,
     text: "The lesson isn't 'reciprocate.' It's 'reciprocate, but leave room for mistakes. The real world is noisier than any of your six matches.'" },
 ];
@@ -86,7 +109,16 @@ export function initEvolutionView(navigateFn) {
 }
 
 export function showEvolution() {
-  const el       = document.getElementById('view-evolution');
+  const el = document.getElementById('view-evolution');
+  ALL = [
+    ...CANONICAL,
+    ...getUserStrategies().map(spec => ({
+      id: spec.id, name: spec.name, color: spec.color,
+      label: 'Your build',
+      spec,
+      isUser: true,
+    })),
+  ];
   const timeline = buildTimeline(computeHistories());
   buildDOM(el);
   runSimulation(el, timeline);
@@ -98,16 +130,16 @@ function computeHistories() {
   const matches = [];
   for (let i = 0; i < ALL.length; i++) {
     for (let j = i + 1; j < ALL.length; j++) {
-      const { histA, histB } = playMatch(ALL[i].strategyId, ALL[j].strategyId);
+      const { histA, histB } = playMatch(ALL[i].spec, ALL[j].spec);
       matches.push({ i, j, histA, histB });
     }
   }
   return matches;
 }
 
-function playMatch(idA, idB) {
-  const stratA = compileStrategy(REGISTRY[idA]);
-  const stratB = compileStrategy(REGISTRY[idB]);
+function playMatch(specA, specB) {
+  const stratA = compileStrategy(specA);
+  const stratB = compileStrategy(specB);
   const result = runMatch(stratA, stratB, { rounds: ROUNDS, masterSeed: CANONICAL_TOURNAMENT_SEED });
   return {
     histA: result.history.map(h => h.aCumulative),
@@ -134,7 +166,7 @@ function buildDOM(el) {
     <div class="evo-header">
       <h1 class="evo-title">Now they compete.</h1>
       <p class="evo-subtitle">
-        <span>Every pair plays 50 rounds — ${MATCH_COUNT} matches total</span>
+        <span>Every pair plays 50 rounds — ${ALL.length * (ALL.length - 1) / 2} matches total</span>
         <span class="evo-round-counter"> · Round <span class="evo-round-num">0</span></span>
       </p>
     </div>
@@ -154,15 +186,16 @@ function buildDOM(el) {
 
     <div class="evo-board">
       ${ALL.map(c => `
-        <div class="evo-row" data-id="${c.id}" style="--char-color:${c.color}">
+        <div class="evo-row${c.isUser ? ' evo-row-user' : ''}" data-id="${c.id}" style="--char-color:${c.color}">
           <div class="evo-row-meta">
             <span class="evo-rank"></span>
             <span class="evo-pip" style="background:${c.color}"></span>
             <div class="evo-names">
               <span class="evo-name">${c.name}</span>
-              <span class="evo-strategy">${c.revealName}</span>
+              <span class="evo-strategy">${c.label}</span>
             </div>
             <span class="evo-score">0</span>
+            ${c.isUser ? `<button class="evo-delete" data-delete-id="${c.id}" title="Delete this player" aria-label="Delete ${c.name}">×</button>` : ''}
           </div>
           <div class="evo-bar-wrap">
             <div class="evo-bar" style="background:${c.color}"></div>
@@ -186,6 +219,19 @@ function buildDOM(el) {
 
   el.querySelector('[data-action="build"]')
     ?.addEventListener('click', () => go('builder'));
+
+  // Delete-user-strategy buttons. Re-show the view after deletion so the
+  // board reflects the new roster from scratch.
+  el.querySelectorAll('[data-delete-id]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = btn.dataset.deleteId;
+      const name = btn.getAttribute('aria-label')?.replace('Delete ', '') ?? 'this player';
+      if (!confirm(`Delete "${name}"? They'll be removed from the tournament.`)) return;
+      deleteUserStrategy(id);
+      showEvolution();
+    });
+  });
 
   el.querySelector('[data-action="play-again"]')
     ?.addEventListener('click', () => {
