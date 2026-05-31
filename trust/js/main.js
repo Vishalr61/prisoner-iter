@@ -7,6 +7,7 @@ import { initRevealView, showReveal } from './views/reveal-view.js';
 import { initEvolutionView, showEvolution } from './views/evolution-view.js';
 import { initBuilderView, showBuilder } from './views/builder-view.js';
 import { getSavedProgress, clearProgress, markCampaignDone } from './progress.js';
+import { decodeStrategy } from '../../core/strategy.js';
 import { initDevMenu } from './dev-menu.js'; // DEV ONLY
 
 // ── Router ────────────────────────────────────────────────────────────────────
@@ -46,7 +47,7 @@ export function navigate(viewName, params = {}) {
   }
 
   if (viewName === 'builder') {
-    showBuilder();
+    showBuilder(params);
   }
 }
 
@@ -82,6 +83,23 @@ function boot() {
     ?.addEventListener('click', () => navigate('reveal'));
   campaignEnd?.querySelector('[data-action="play-again"]')
     ?.addEventListener('click', () => { clearProgress(); navigate('cold-open'); });
+
+  // ?play=<encoded> overrides resume — drop a friend straight into the builder
+  // with the shared strategy pre-populated. Strip the param so a refresh
+  // doesn't keep re-prefilling.
+  const playParam = new URLSearchParams(location.search).get('play');
+  if (playParam) {
+    try {
+      const spec = decodeStrategy(playParam);
+      history.replaceState({}, '', location.pathname);
+      navigate('builder', { prefill: spec });
+      return;
+    } catch (e) {
+      console.warn('Ignoring malformed ?play= URL:', e);
+      history.replaceState({}, '', location.pathname);
+      // fall through to normal resume
+    }
+  }
 
   // Resume from saved progress
   const saved = getSavedProgress();
