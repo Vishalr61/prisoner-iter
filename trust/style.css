@@ -1503,6 +1503,94 @@ h1, h2, .heading {
   font-size: 0.85rem;
 }
 
+.bld-mode-toggle {
+  margin: 0 24px;
+  display: flex;
+  gap: 2px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 3px;
+  width: fit-content;
+}
+.bld-mode-btn {
+  background: transparent;
+  color: var(--fg-dim);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.bld-mode-btn:hover { color: var(--fg); }
+.bld-mode-btn.active {
+  background: var(--bld-color);
+  color: #0e0d0c;
+}
+
+.bld-advanced { padding: 0 24px; }
+
+.bld-rules-editor {
+  width: 100%;
+  min-height: 200px;
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'SF Mono', 'Menlo', Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--fg);
+  resize: vertical;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+.bld-rules-editor:focus { border-color: var(--bld-color); }
+.bld-rules-editor.bld-adv-error { border-color: #f87171; }
+
+.bld-ref {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  color: var(--fg-dim);
+}
+.bld-ref summary {
+  cursor: pointer;
+  color: var(--fg);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+}
+.bld-ref-line {
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.bld-ref-line code {
+  background: rgba(255,255,255,0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.bld-toast {
+  margin: 8px 24px 0;
+  padding: 10px 14px;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid var(--bld-color);
+  border-radius: 6px;
+  color: var(--fg);
+  font-size: 0.85rem;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.bld-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ── Utility ───────────────────────────────────────────────────────────────── */
 .spacer { flex: 1; }
 .w-full { width: 100%; }

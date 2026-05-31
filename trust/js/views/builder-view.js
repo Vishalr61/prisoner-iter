@@ -4,7 +4,7 @@
 // Advanced rule editor, URL encoding, and the test-in-tournament sidebar
 // come in Session B.
 
-import { compileStrategy, configToRules } from '../../../core/strategy.js';
+import { compileStrategy, configToRules, encodeStrategy } from '../../../core/strategy.js';
 import { REGISTRY }                        from '../../../core/registry.js';
 import { runMatch }                        from '../../../core/match.js';
 import { saveUserStrategy }                from '../progress.js';
@@ -17,6 +17,9 @@ const PREVIEW_SEED = 1;
 const DEFAULT_STATE = () => ({
   name:  'Your player',
   color: '#2dd4bf',
+  // Builder mode: 'simple' uses the 5-control config UI; 'advanced' exposes
+  // the raw condition-action rules as editable JSON.
+  builderMode: 'simple',
   config: {
     opener:      'C',
     mode:        'opponent-reactive',
@@ -24,6 +27,11 @@ const DEFAULT_STATE = () => ({
     forgiveness: 0,
     noise:       0,
   },
+  // Only used when builderMode === 'advanced'. Populated from configToRules
+  // the first time the user switches modes.
+  rules: null,
+  // Error message shown in advanced mode if the JSON doesn't parse or compile.
+  rulesError: null,
 });
 
 const COLOR_SWATCHES = [
@@ -38,12 +46,35 @@ export function initBuilderView(navigateFn) {
   go = navigateFn;
 }
 
-export function showBuilder() {
-  state = DEFAULT_STATE();
+export function showBuilder(params = {}) {
+  state = params.prefill ? prefillFromSpec(params.prefill) : DEFAULT_STATE();
   const el = document.getElementById('view-builder');
   buildDOM(el);
   wireEvents(el);
   refreshPreview(el);
+}
+
+// Map a Strategy spec from URL/storage back into the builder's working state.
+// Falls back to defaults for anything the spec doesn't specify.
+function prefillFromSpec(spec) {
+  const defaults = DEFAULT_STATE();
+  // Rules-only specs open straight into advanced mode (can't round-trip
+  // arbitrary rules through the simplified 5-control UI).
+  if (spec.rules && !spec.config) {
+    return {
+      ...defaults,
+      name:        spec.name  || defaults.name,
+      color:       spec.color || defaults.color,
+      builderMode: 'advanced',
+      rules:       spec.rules,
+    };
+  }
+  return {
+    ...defaults,
+    name:   spec.name  || defaults.name,
+    color:  spec.color || defaults.color,
+    config: spec.config ? { ...defaults.config, ...spec.config } : defaults.config,
+  };
 }
 
 // ── DOM ───────────────────────────────────────────────────────────────────────
@@ -57,7 +88,7 @@ function buildDOM(el) {
       </header>
 
       <div class="bld-identity">
-        <input class="bld-name" type="text" value="${state.name}" maxlength="24" aria-label="Name" />
+        <input class="bld-name" type="text" value="${escapeHtml(state.name)}" maxlength="24" aria-label="Name" />
         <div class="bld-swatches" role="radiogroup" aria-label="Color">
           ${COLOR_SWATCHES.map(c => `
             <button class="bld-swatch${c === state.color ? ' selected' : ''}"
@@ -66,35 +97,14 @@ function buildDOM(el) {
         </div>
       </div>
 
-      <section class="bld-section">
-        <h2 class="bld-label">First move</h2>
-        ${chips('opener', state.config.opener, [
-          { v: 'C',      l: 'Cooperate' },
-          { v: 'D',      l: 'Defect' },
-          { v: 'random', l: 'Random' },
-        ])}
-      </section>
+      <div class="bld-mode-toggle">
+        <button class="bld-mode-btn${state.builderMode === 'simple' ? ' active' : ''}"
+          data-mode="simple">Simple</button>
+        <button class="bld-mode-btn${state.builderMode === 'advanced' ? ' active' : ''}"
+          data-mode="advanced">Advanced</button>
+      </div>
 
-      <section class="bld-section">
-        <h2 class="bld-label">What they react to</h2>
-        ${chips('mode', state.config.mode, [
-          { v: 'opponent-reactive', l: 'What you did' },
-          { v: 'outcome-reactive',  l: 'How it went' },
-          { v: 'none',              l: 'Nothing' },
-          { v: 'random',            l: 'Random' },
-        ])}
-      </section>
-
-      <section class="bld-section bld-reaction"></section>
-
-      <section class="bld-section bld-forgiveness"></section>
-
-      <section class="bld-section">
-        <h2 class="bld-label">Execution noise <span class="bld-pct" data-noise-pct>0%</span></h2>
-        <p class="bld-hint">Chance any chosen move flips by accident.</p>
-        <input class="bld-slider" type="range" min="0" max="0.3" step="0.01"
-          value="${state.config.noise}" data-field="noise" />
-      </section>
+      <div class="bld-controls" data-controls></div>
 
       <div class="bld-summary" data-summary></div>
 
@@ -114,12 +124,91 @@ function buildDOM(el) {
 
       <div class="bld-actions">
         <button class="btn btn-primary" data-action="save">Save player</button>
+        <button class="btn btn-ghost"   data-action="share-link">Share</button>
         <button class="btn btn-ghost"   data-action="back">Back</button>
       </div>
+      <div class="bld-toast" data-toast aria-live="polite" hidden></div>
     </div>
   `;
 
-  renderConditionalSections(el);
+  renderControls(el);
+}
+
+// Render either the simple 5-control UI or the advanced rule editor,
+// depending on state.builderMode. The simple controls live in their own
+// helper because reaction/forgiveness sections are conditional on `mode`.
+function renderControls(el) {
+  const container = el.querySelector('[data-controls]');
+  if (state.builderMode === 'advanced') {
+    container.innerHTML = renderAdvancedEditor();
+  } else {
+    container.innerHTML = renderSimpleControls();
+    renderConditionalSections(el);
+  }
+}
+
+function renderSimpleControls() {
+  return `
+    <section class="bld-section">
+      <h2 class="bld-label">First move</h2>
+      ${chips('opener', state.config.opener, [
+        { v: 'C',      l: 'Cooperate' },
+        { v: 'D',      l: 'Defect' },
+        { v: 'random', l: 'Random' },
+      ])}
+    </section>
+
+    <section class="bld-section">
+      <h2 class="bld-label">What they react to</h2>
+      ${chips('mode', state.config.mode, [
+        { v: 'opponent-reactive', l: 'What you did' },
+        { v: 'outcome-reactive',  l: 'How it went' },
+        { v: 'none',              l: 'Nothing' },
+        { v: 'random',            l: 'Random' },
+      ])}
+    </section>
+
+    <section class="bld-section bld-reaction"></section>
+    <section class="bld-section bld-forgiveness"></section>
+
+    <section class="bld-section">
+      <h2 class="bld-label">Execution noise <span class="bld-pct" data-noise-pct>${pct(state.config.noise)}</span></h2>
+      <p class="bld-hint">Chance any chosen move flips by accident.</p>
+      <input class="bld-slider" type="range" min="0" max="0.3" step="0.01"
+        value="${state.config.noise}" data-field="noise" />
+    </section>
+  `;
+}
+
+function renderAdvancedEditor() {
+  // Lazy-populate rules from the current config the first time we enter
+  // advanced mode, so the user sees what their simple choices compile to.
+  if (!state.rules) state.rules = configToRules(state.config) ?? [{ if: 'always', then: 'cooperate' }];
+
+  const json = JSON.stringify(state.rules, null, 2);
+  const errClass = state.rulesError ? ' bld-adv-error' : '';
+  return `
+    <section class="bld-section bld-advanced">
+      <h2 class="bld-label">Rules</h2>
+      <p class="bld-hint">
+        Ordered list. First matching condition fires its action. End with
+        <code>{ "if": "always", ... }</code> so every situation has a move.
+      </p>
+      <textarea class="bld-rules-editor${errClass}" data-rules-editor spellcheck="false">${escapeHtml(json)}</textarea>
+      ${state.rulesError ? `<p class="bld-error" data-rules-error>${escapeHtml(state.rulesError)}</p>` : ''}
+
+      <details class="bld-ref">
+        <summary>Vocabulary</summary>
+        <p class="bld-ref-line"><b>Conditions:</b> always · first-round · last-round · round-equals N · round-less-than N · round-greater-than N · opponent-last-was C|D · opponent-defected-in-last N · opponent-cooperated-in-last N · opponent-defected-count-in-last N at-least K · opponent-defection-rate-above P · opponent-defection-rate-below P · opponent-ever-defected · opponent-ever-cooperated · opponent-always-defected · opponent-always-cooperated · i-last-played C|D · last-round-was CC|CD|DC|DD · last-round-payoff-was-good · last-round-payoff-was-bad · probability P</p>
+        <p class="bld-ref-line"><b>Actions:</b> cooperate · defect · mirror-opponent · repeat-last-move · flip-last-move · random · random-weighted P</p>
+        <p class="bld-ref-line"><b>Composites:</b> <code>{ "and": [c1, c2] }</code> · <code>{ "or": [c1, c2] }</code> · <code>{ "not": c }</code></p>
+      </details>
+    </section>
+  `;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 }
 
 function chips(field, current, options) {
@@ -190,7 +279,21 @@ function wireEvents(el) {
     el.querySelector('.bld-wrap').style.setProperty('--bld-color', state.color);
   });
 
-  // Chips + sliders — delegated
+  // Mode toggle
+  el.querySelectorAll('.bld-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      if (mode === state.builderMode) return;
+      state.builderMode = mode;
+      // Re-render the mode buttons' active class
+      el.querySelectorAll('.bld-mode-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === mode));
+      renderControls(el);
+      refreshPreview(el);
+    });
+  });
+
+  // Chips + sliders — delegated (only fire in simple mode)
   el.addEventListener('click', e => {
     const chip = e.target.closest('.bld-chip');
     if (!chip) return;
@@ -200,14 +303,97 @@ function wireEvents(el) {
 
   el.addEventListener('input', e => {
     const slider = e.target.closest('.bld-slider');
-    if (!slider) return;
-    const { field } = slider.dataset;
-    handleConfigChange(el, field, parseFloat(slider.value));
+    if (slider) {
+      handleConfigChange(el, slider.dataset.field, parseFloat(slider.value));
+      return;
+    }
+    const editor = e.target.closest('[data-rules-editor]');
+    if (editor) handleRulesChange(el, editor.value);
   });
 
   // Buttons
   el.querySelector('[data-action="save"]').addEventListener('click', () => saveAndExit(el));
+  el.querySelector('[data-action="share-link"]').addEventListener('click', () => shareLink(el));
   el.querySelector('[data-action="back"]').addEventListener('click', () => go('evolution'));
+}
+
+// ── Share via URL ─────────────────────────────────────────────────────────────
+
+async function shareLink(el) {
+  const spec = buildSpec(); // no id — shared link is meta-only until receiver saves
+  delete spec.id;
+  delete spec.createdAt;
+  const encoded = encodeStrategy(spec);
+  const url = `${location.origin}${location.pathname}?play=${encoded}`;
+
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(url);
+    copied = true;
+  } catch {
+    // Some browsers / contexts disallow clipboard writes (e.g. http://).
+    // Fall back to a prompt the user can copy manually.
+    window.prompt('Copy this link:', url);
+  }
+  toast(el, copied ? 'Link copied to clipboard' : 'Copy the link from the prompt');
+}
+
+function toast(el, msg) {
+  const t = el.querySelector('[data-toast]');
+  t.textContent = msg;
+  t.hidden = false;
+  t.classList.add('show');
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => { t.hidden = true; }, 300);
+  }, 1800);
+}
+
+// Advanced-mode textarea handler. Parses, validates via compileStrategy,
+// shows inline error or updates the live preview.
+function handleRulesChange(el, raw) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    state.rulesError = `JSON: ${e.message}`;
+    showRulesError(el);
+    return;
+  }
+  if (!Array.isArray(parsed)) {
+    state.rulesError = 'Rules must be an array.';
+    showRulesError(el);
+    return;
+  }
+  try {
+    compileStrategy({ id: 'preview', rules: parsed, version: 1 });
+  } catch (e) {
+    state.rulesError = e.message;
+    showRulesError(el);
+    return;
+  }
+  state.rules = parsed;
+  state.rulesError = null;
+  showRulesError(el);
+  refreshPreview(el);
+}
+
+function showRulesError(el) {
+  const editor = el.querySelector('[data-rules-editor]');
+  editor?.classList.toggle('bld-adv-error', !!state.rulesError);
+
+  let errEl = el.querySelector('[data-rules-error]');
+  if (state.rulesError) {
+    if (!errEl) {
+      errEl = document.createElement('p');
+      errEl.className = 'bld-error';
+      errEl.dataset.rulesError = '';
+      editor.parentNode.insertBefore(errEl, editor.nextSibling);
+    }
+    errEl.textContent = state.rulesError;
+  } else if (errEl) {
+    errEl.remove();
+  }
 }
 
 function handleConfigChange(el, field, value) {
@@ -219,6 +405,10 @@ function handleConfigChange(el, field, value) {
   } else {
     state.config[field] = value;
   }
+  // Any simple-mode change invalidates the advanced-mode canvas — next time
+  // the user opens Advanced, the rules re-derive from the new config rather
+  // than showing stale hand-edited rules from a previous session.
+  state.rules = null;
 
   // Re-render conditional sections (reaction style + forgiveness visibility)
   renderConditionalSections(el);
@@ -242,18 +432,15 @@ function handleConfigChange(el, field, value) {
 
 function refreshPreview(el) {
   const summaryEl = el.querySelector('[data-summary]');
-  summaryEl.textContent = behaviorSummary(state.config);
+  // In advanced mode the summary is unreliable (rules can be anything),
+  // so show a generic line. In simple mode use the plain-English summary.
+  summaryEl.textContent = state.builderMode === 'advanced'
+    ? `${(state.rules ?? []).length} rule${(state.rules ?? []).length === 1 ? '' : 's'}, applied top to bottom each round.`
+    : behaviorSummary(state.config);
 
-  // Compile the in-progress strategy
   let compiled;
   try {
-    compiled = compileStrategy({
-      id: 'preview',
-      name: state.name || 'Preview',
-      color: state.color,
-      config: state.config,
-      version: 1,
-    });
+    compiled = compileStrategy(specForPreview());
   } catch (err) {
     setPreviewError(el, err.message);
     return;
@@ -262,7 +449,7 @@ function refreshPreview(el) {
   const opponent = compileStrategy(REGISTRY[PREVIEW_OPPONENT_ID]);
   const result = runMatch(compiled, opponent, {
     rounds:     PREVIEW_ROUNDS,
-    noise:      state.config.noise,
+    noise:      state.builderMode === 'simple' ? state.config.noise : 0,
     masterSeed: PREVIEW_SEED,
   });
 
@@ -270,6 +457,19 @@ function refreshPreview(el) {
   renderDots(el.querySelector('[data-dots="them"]'), result.history.map(h => h.bMove), REGISTRY.tft.color);
   el.querySelector('[data-score="me"]').textContent   = result.finalScoreA;
   el.querySelector('[data-score="them"]').textContent = result.finalScoreB;
+}
+
+// The compileable spec depends on which mode the user's editing in.
+function specForPreview() {
+  const base = {
+    id: 'preview',
+    name: state.name || 'Preview',
+    color: state.color,
+    version: 1,
+  };
+  return state.builderMode === 'advanced'
+    ? { ...base, rules:  state.rules }
+    : { ...base, config: state.config };
 }
 
 function renderDots(container, moves, color) {
@@ -317,18 +517,26 @@ function pct(x) { return `${Math.round(x * 100)}%`; }
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 
-function saveAndExit(el) {
+// Build a full Strategy spec from the current builder state. Used by both
+// Save (assigns an id, persists) and Share (id-less, encoded into URL).
+// Carries either config (simple mode) or rules (advanced mode), not both.
+function buildSpec() {
   const name = (state.name || '').trim() || 'Untitled';
-  const spec = {
+  const base = {
     id:          `player-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     name,
     color:       state.color,
     source:      'player',
-    description: behaviorSummary(state.config),
-    config:      { ...state.config },
     createdAt:   Date.now(),
     version:     1,
   };
+  return state.builderMode === 'advanced'
+    ? { ...base, rules:  state.rules, description: `${(state.rules ?? []).length} rules` }
+    : { ...base, config: { ...state.config }, description: behaviorSummary(state.config) };
+}
+
+function saveAndExit(el) {
+  const spec = buildSpec();
   saveUserStrategy(spec);
 
   // Brief confirmation, then back to evolution
