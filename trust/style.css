@@ -1355,9 +1355,67 @@ h1, h2, .heading {
   transform: scale(1.15);
 }
 
+/* Preset chips — "Start from someone you know". One click pre-fills
+   color + config from a canonical character. */
+.bld-presets {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bld-presets-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+  margin: 0;
+}
+.bld-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bld-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px 7px 10px;
+  color: var(--fg);
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+.bld-preset-chip:hover {
+  border-color: var(--preset-color);
+  background: rgba(255,255,255,0.03);
+  transform: translateY(-1px);
+}
+.bld-preset-pip {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--preset-color);
+  flex-shrink: 0;
+}
+
+/* Sections inside the controls container don't inherit .bld-wrap's gap,
+   so give them their own breathing room. */
+.bld-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
 .bld-section {
   padding: 0 24px;
 }
+.bld-section:empty { display: none; }   /* conditional sections collapse cleanly */
 .bld-label {
   font-family: 'Inter', sans-serif;
   font-size: 0.8rem;
@@ -1381,6 +1439,21 @@ h1, h2, .heading {
   font-size: 0.78rem;
   color: var(--fg-dim);
   margin: -6px 0 10px;
+}
+
+/* Per-parameter "teach" copy — short narrative grounded in the cast.
+   Sits between the label and the chips for every section. */
+.bld-teach {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  margin: 0 0 12px;
+}
+.bld-teach em {
+  color: var(--fg);
+  font-style: italic;
 }
 
 .bld-chips {
@@ -1436,16 +1509,32 @@ h1, h2, .heading {
   border: 2px solid var(--bg);
 }
 
+/* "This player will…" summary card — the visual centerpiece between
+   what the user chose and what it produces. */
+.bld-summary-card {
+  margin: 8px 24px 4px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%);
+  border: 1px solid var(--bld-color);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bld-summary-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  color: var(--bld-color);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
 .bld-summary {
-  padding: 16px 24px;
-  margin: 0 24px;
-  background: rgba(255, 255, 255, 0.03);
-  border-left: 2px solid var(--bld-color);
-  border-radius: 4px;
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  font-size: clamp(1rem, 4vw, 1.15rem);
+  line-height: 1.55;
   color: var(--fg);
+  margin: 0;
 }
 
 .bld-preview {

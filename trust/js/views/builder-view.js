@@ -39,6 +39,24 @@ const COLOR_SWATCHES = [
   '#a085bd', '#4c9c6a', '#94a3b8', '#a23b3b',
 ];
 
+// Character presets — clicking one fills the config + color so the user is
+// modifying someone they know rather than configuring from zero. The configs
+// match what each canonical character's strategy compiles to.
+const CHARACTER_PRESETS = [
+  { id: 'sam',    name: 'Sam',    color: '#f0c674',
+    config: { opener: 'C', mode: 'none',              reaction: 'mirror',                forgiveness: 0,   noise: 0 } },
+  { id: 'maya',   name: 'Maya',   color: '#5e8ca8',
+    config: { opener: 'C', mode: 'opponent-reactive', reaction: 'mirror',                forgiveness: 0,   noise: 0 } },
+  { id: 'naomi',  name: 'Naomi',  color: '#a085bd',
+    config: { opener: 'C', mode: 'opponent-reactive', reaction: 'mirror-after-two',      forgiveness: 0,   noise: 0 } },
+  { id: 'theo',   name: 'Theo',   color: '#c87635',
+    config: { opener: 'C', mode: 'opponent-reactive', reaction: 'permanent-punishment',  forgiveness: 0,   noise: 0 } },
+  { id: 'ren',    name: 'Ren',    color: '#4c9c6a',
+    config: { opener: 'C', mode: 'outcome-reactive',  reaction: 'repeat-on-success',     forgiveness: 0,   noise: 0 } },
+  { id: 'marcus', name: 'Marcus', color: '#a23b3b',
+    config: { opener: 'D', mode: 'none',              reaction: 'mirror',                forgiveness: 0,   noise: 0 } },
+];
+
 let state = DEFAULT_STATE();
 let go = null;
 
@@ -84,8 +102,19 @@ function buildDOM(el) {
     <div class="bld-wrap" style="--bld-color:${state.color}">
       <header class="bld-header">
         <h1 class="bld-title">Build a player</h1>
-        <p class="bld-subtitle">Five choices. Watch them play Maya.</p>
+        <p class="bld-subtitle">Make their choices. Watch them play Maya.</p>
       </header>
+
+      <section class="bld-presets">
+        <p class="bld-presets-label">Start from someone you know</p>
+        <div class="bld-preset-chips">
+          ${CHARACTER_PRESETS.map(c => `
+            <button class="bld-preset-chip" data-preset="${c.id}" style="--preset-color:${c.color}">
+              <span class="bld-preset-pip"></span>${c.name}
+            </button>
+          `).join('')}
+        </div>
+      </section>
 
       <div class="bld-identity">
         <input class="bld-name" type="text" value="${escapeHtml(state.name)}" maxlength="24" aria-label="Name" />
@@ -106,7 +135,10 @@ function buildDOM(el) {
 
       <div class="bld-controls" data-controls></div>
 
-      <div class="bld-summary" data-summary></div>
+      <section class="bld-summary-card">
+        <p class="bld-summary-label">This player will</p>
+        <p class="bld-summary" data-summary></p>
+      </section>
 
       <section class="bld-preview">
         <h2 class="bld-label">Watch them play Maya</h2>
@@ -151,6 +183,7 @@ function renderSimpleControls() {
   return `
     <section class="bld-section">
       <h2 class="bld-label">First move</h2>
+      <p class="bld-teach">Sam opened by sharing. Marcus opened by taking. What does yours do?</p>
       ${chips('opener', state.config.opener, [
         { v: 'C',      l: 'Cooperate' },
         { v: 'D',      l: 'Defect' },
@@ -160,6 +193,7 @@ function renderSimpleControls() {
 
     <section class="bld-section">
       <h2 class="bld-label">What they react to</h2>
+      <p class="bld-teach">Maya watched what you did. Ren watched how the round turned out. Sam and Marcus didn't watch anything — they just stuck to their opener.</p>
       ${chips('mode', state.config.mode, [
         { v: 'opponent-reactive', l: 'What you did' },
         { v: 'outcome-reactive',  l: 'How it went' },
@@ -173,7 +207,7 @@ function renderSimpleControls() {
 
     <section class="bld-section">
       <h2 class="bld-label">Execution noise <span class="bld-pct" data-noise-pct>${pct(state.config.noise)}</span></h2>
-      <p class="bld-hint">Chance any chosen move flips by accident.</p>
+      <p class="bld-teach">Sometimes you mean to share but your hand slips. Game theorists call it <em>noise</em>. Strict strategies get hurt by it. Forgiving ones recover.</p>
       <input class="bld-slider" type="range" min="0" max="0.3" step="0.01"
         value="${state.config.noise}" data-field="noise" />
     </section>
@@ -232,6 +266,7 @@ function renderConditionalSections(el) {
   if (mode === 'opponent-reactive') {
     reactionHtml = `
       <h2 class="bld-label">How they react</h2>
+      <p class="bld-teach">Mirror what you just did — like Maya. Wait for two defections — like Naomi. Never forgive a single one — like Theo.</p>
       ${chips('reaction', reaction, [
         { v: 'mirror',                l: 'Mirror' },
         { v: 'mirror-after-two',      l: 'After two' },
@@ -241,6 +276,7 @@ function renderConditionalSections(el) {
   } else if (mode === 'outcome-reactive') {
     reactionHtml = `
       <h2 class="bld-label">How they react</h2>
+      <p class="bld-teach">Stick with what worked, switch when it didn't — that's how Ren played. Watching outcomes, not opponents.</p>
       ${chips('reaction', reaction, [
         { v: 'repeat-on-success', l: 'Repeat what worked' },
         { v: 'flip-on-success',   l: 'Switch when it works' },
@@ -253,7 +289,7 @@ function renderConditionalSections(el) {
   if (mode === 'opponent-reactive' && reaction === 'mirror') {
     forgEl.innerHTML = `
       <h2 class="bld-label">Forgiveness <span class="bld-pct" data-forg-pct>${pct(forgiveness)}</span></h2>
-      <p class="bld-hint">Chance of cooperating despite a defection.</p>
+      <p class="bld-teach">At 10%, this is <em>Generous Tit-for-Tat</em> — Maya, but she lets one defection in ten slide. Often wins against noisy opponents because it doesn't escalate.</p>
       <input class="bld-slider" type="range" min="0" max="0.3" step="0.01"
         value="${forgiveness}" data-field="forgiveness" />
     `;
@@ -277,6 +313,27 @@ function wireEvents(el) {
     state.color = sw.dataset.color;
     el.querySelectorAll('.bld-swatch').forEach(s => s.classList.toggle('selected', s === sw));
     el.querySelector('.bld-wrap').style.setProperty('--bld-color', state.color);
+  });
+
+  // Preset chips — fills color + config from a canonical character.
+  el.querySelectorAll('[data-preset]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const preset = CHARACTER_PRESETS.find(p => p.id === btn.dataset.preset);
+      if (!preset) return;
+      state.color = preset.color;
+      state.config = { ...preset.config };
+      state.builderMode = 'simple';
+      state.rules = null;
+      state.rulesError = null;
+      // Don't overwrite a name the user has personalised; only refresh if
+      // they're still on the default.
+      if (!state.name || state.name === 'Your player' || /^Like /.test(state.name)) {
+        state.name = `Like ${preset.name}`;
+      }
+      buildDOM(el);
+      wireEvents(el);
+      refreshPreview(el);
+    });
   });
 
   // Mode toggle
