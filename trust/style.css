@@ -1251,6 +1251,226 @@ h1, h2, .heading {
   line-height: 1.6;
 }
 
+/* ── Builder view (Phase 2) ─────────────────────────────────────────────────── */
+
+#view-builder {
+  justify-content: flex-start;
+  padding: 32px 0 0;
+  overflow-y: auto;
+}
+
+.bld-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-bottom: 48px;
+}
+
+.bld-header {
+  padding: 0 24px;
+}
+.bld-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  font-weight: 600;
+  color: var(--fg);
+}
+.bld-subtitle {
+  font-size: 0.9rem;
+  color: var(--fg-dim);
+  margin-top: 4px;
+}
+
+.bld-identity {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bld-name {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--bld-color, var(--border));
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.4rem;
+  color: var(--bld-color, var(--fg));
+  padding: 8px 0;
+  outline: none;
+  transition: border-color 200ms ease;
+}
+.bld-name:focus {
+  border-color: var(--bld-color);
+}
+
+.bld-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.bld-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+.bld-swatch:hover { transform: scale(1.1); }
+.bld-swatch.selected {
+  border-color: var(--fg);
+  transform: scale(1.15);
+}
+
+.bld-section {
+  padding: 0 24px;
+}
+.bld-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.bld-pct {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 0.95rem;
+  color: var(--bld-color);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.bld-hint {
+  font-size: 0.78rem;
+  color: var(--fg-dim);
+  margin: -6px 0 10px;
+}
+
+.bld-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bld-chip {
+  background: transparent;
+  color: var(--fg-dim);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+.bld-chip:hover {
+  color: var(--fg);
+  border-color: var(--fg-dim);
+}
+.bld-chip.selected {
+  background: var(--bld-color);
+  color: #0e0d0c;
+  border-color: var(--bld-color);
+}
+
+.bld-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+.bld-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bld-color);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+.bld-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bld-color);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+
+.bld-summary {
+  padding: 16px 24px;
+  margin: 0 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid var(--bld-color);
+  border-radius: 4px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.bld-preview {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bld-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bld-preview-name {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 0.85rem;
+  width: 48px;
+  flex-shrink: 0;
+  color: var(--fg-dim);
+}
+.bld-dots {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.bld-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.bld-dot-D {
+  background: transparent;
+  border: 1px solid var(--fg-dim);
+}
+.bld-preview-score {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1rem;
+  color: var(--fg);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.bld-actions {
+  padding: 8px 24px 0;
+  display: flex;
+  gap: 12px;
+}
+.bld-actions .btn { flex: 1; }
+
+.bld-error {
+  color: #f87171;
+  font-size: 0.85rem;
+}
+
 /* ── Utility ───────────────────────────────────────────────────────────────── */
 .spacer { flex: 1; }
 .w-full { width: 100%; }

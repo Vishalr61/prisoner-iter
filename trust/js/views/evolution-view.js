@@ -179,9 +179,13 @@ function buildDOM(el) {
     </div>
 
     <div class="evo-actions">
-      <button class="btn btn-ghost" data-action="play-again">Play again</button>
+      <button class="btn btn-primary" data-action="build">Now build one →</button>
+      <button class="btn btn-ghost"   data-action="play-again">Play again</button>
     </div>
   `;
+
+  el.querySelector('[data-action="build"]')
+    ?.addEventListener('click', () => go('builder'));
 
   el.querySelector('[data-action="play-again"]')
     ?.addEventListener('click', () => {

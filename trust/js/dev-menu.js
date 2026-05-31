@@ -13,6 +13,7 @@ const ITEMS = [
   { label: 'Campaign end', action: () => { seed({ done: true }); navigate('campaign-end'); } },
   { label: 'Reveal',       action: () => { seed({ done: true }); navigate('reveal'); } },
   { label: 'Evolution',    action: () => { seed({ done: true }); navigate('evolution'); } },
+  { label: 'Builder',      action: () => { clear(); navigate('builder'); } },
 ];
 
 export function initDevMenu() {

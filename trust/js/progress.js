@@ -121,3 +121,24 @@ export function clearProgress() {
 export function getSavedProgress() {
   return load();
 }
+
+// ── User-built strategies (Phase 2) ──────────────────────────────────────────
+
+export function getUserStrategies() {
+  return load()?.userStrategies ?? [];
+}
+
+// Appends a spec. Caller is responsible for assigning a unique id
+// (typically `player-<timestamp>-<rand>`).
+export function saveUserStrategy(spec) {
+  const state = load() || EMPTY_STATE();
+  state.userStrategies = state.userStrategies || [];
+  state.userStrategies.push(spec);
+  save(state);
+}
+
+export function deleteUserStrategy(id) {
+  const state = load() || EMPTY_STATE();
+  state.userStrategies = (state.userStrategies || []).filter(s => s.id !== id);
+  save(state);
+}

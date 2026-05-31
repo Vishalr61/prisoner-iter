@@ -5,6 +5,7 @@ import { initMatchView, startMatch } from './views/match-view.js';
 import { initSummaryView, showSummary } from './views/summary-view.js';
 import { initRevealView, showReveal } from './views/reveal-view.js';
 import { initEvolutionView, showEvolution } from './views/evolution-view.js';
+import { initBuilderView, showBuilder } from './views/builder-view.js';
 import { getSavedProgress, clearProgress, markCampaignDone } from './progress.js';
 import { initDevMenu } from './dev-menu.js'; // DEV ONLY
 
@@ -12,7 +13,7 @@ import { initDevMenu } from './dev-menu.js'; // DEV ONLY
 
 const VIEWS = [
   'cold-open', 'dilemma', 'intro-card', 'match',
-  'summary', 'campaign-end', 'reveal', 'evolution',
+  'summary', 'campaign-end', 'reveal', 'evolution', 'builder',
 ];
 
 export function navigate(viewName, params = {}) {
@@ -43,6 +44,10 @@ export function navigate(viewName, params = {}) {
   if (viewName === 'evolution') {
     showEvolution();
   }
+
+  if (viewName === 'builder') {
+    showBuilder();
+  }
 }
 
 // ── Intro card ────────────────────────────────────────────────────────────────
@@ -68,6 +73,7 @@ function boot() {
   initSummaryView(navigate);
   initRevealView(navigate);
   initEvolutionView(navigate);
+  initBuilderView(navigate);
   initDevMenu(); // DEV ONLY
 
   // Campaign-end buttons
