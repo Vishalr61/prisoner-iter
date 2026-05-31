@@ -10,8 +10,25 @@ import { runMatch }                        from '../../../core/match.js';
 import { saveUserStrategy }                from '../progress.js';
 
 const PREVIEW_ROUNDS = 20;
-const PREVIEW_OPPONENT_ID = 'tft';   // Maya
-const PREVIEW_SEED = 1;
+const PREVIEW_SEED   = 1;
+
+// Preview opponents — the six campaign characters, in narrative order.
+// User can pick which one the preview plays against. Default Maya (TfT)
+// because she's the canonical reciprocator and gives the richest feedback
+// for cooperative-leaning builds.
+const PREVIEW_OPPONENTS = [
+  { id: 'allC',   strategyId: 'allC',   name: 'Sam',    color: '#f0c674' },
+  { id: 'tft',    strategyId: 'tft',    name: 'Maya',   color: '#5e8ca8' },
+  { id: 'tf2t',   strategyId: 'tf2t',   name: 'Naomi',  color: '#a085bd' },
+  { id: 'grim',   strategyId: 'grim',   name: 'Theo',   color: '#c87635' },
+  { id: 'pavlov', strategyId: 'pavlov', name: 'Ren',    color: '#4c9c6a' },
+  { id: 'allD',   strategyId: 'allD',   name: 'Marcus', color: '#a23b3b' },
+];
+
+// Animation gating — each refreshPreview increments this. Animation
+// callbacks check that they're still the latest before continuing, so a
+// rapid sequence of changes doesn't overlap into garbled output.
+let _previewGen = 0;
 
 // Default starting config: TfT-shape. Familiar, easy to mutate.
 const DEFAULT_STATE = () => ({
@@ -32,6 +49,8 @@ const DEFAULT_STATE = () => ({
   rules: null,
   // Error message shown in advanced mode if the JSON doesn't parse or compile.
   rulesError: null,
+  // Which preview opponent to play against in the live preview.
+  previewOpponentId: 'tft',
 });
 
 const COLOR_SWATCHES = [
@@ -69,7 +88,7 @@ export function showBuilder(params = {}) {
   const el = document.getElementById('view-builder');
   buildDOM(el);
   wireEvents(el);
-  refreshPreview(el);
+  refreshPreview(el, { animate: true });
 }
 
 // Map a Strategy spec from URL/storage back into the builder's working state.
@@ -141,17 +160,31 @@ function buildDOM(el) {
       </section>
 
       <section class="bld-preview">
-        <h2 class="bld-label">Watch them play Maya</h2>
+        <div class="bld-preview-header">
+          <h2 class="bld-label">Watch them play</h2>
+          <div class="bld-opponent-picker" role="radiogroup" aria-label="Preview opponent">
+            ${PREVIEW_OPPONENTS.map(o => `
+              <button class="bld-opp-chip${o.id === state.previewOpponentId ? ' selected' : ''}"
+                data-opponent="${o.id}" style="--opp-color:${o.color}"
+                aria-checked="${o.id === state.previewOpponentId}">
+                <span class="bld-opp-pip"></span>${o.name}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
         <div class="bld-preview-row">
-          <span class="bld-preview-name">You</span>
-          <div class="bld-dots" data-dots="me"></div>
+          <span class="bld-preview-name" data-name="me">You</span>
+          <div class="bld-tokens" data-tokens="me"></div>
           <span class="bld-preview-score" data-score="me">0</span>
         </div>
         <div class="bld-preview-row">
-          <span class="bld-preview-name">Maya</span>
-          <div class="bld-dots" data-dots="them"></div>
+          <span class="bld-preview-name" data-name="them">Maya</span>
+          <div class="bld-tokens" data-tokens="them"></div>
           <span class="bld-preview-score" data-score="them">0</span>
         </div>
+
+        <canvas class="bld-chart" data-chart width="800" height="100"></canvas>
       </section>
 
       <div class="bld-actions">
@@ -315,6 +348,18 @@ function wireEvents(el) {
     el.querySelector('.bld-wrap').style.setProperty('--bld-color', state.color);
   });
 
+  // Preview opponent picker — change who the live preview plays against.
+  el.querySelectorAll('[data-opponent]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const oppId = btn.dataset.opponent;
+      if (oppId === state.previewOpponentId) return;
+      state.previewOpponentId = oppId;
+      el.querySelectorAll('[data-opponent]').forEach(b =>
+        b.classList.toggle('selected', b.dataset.opponent === oppId));
+      refreshPreview(el, { animate: true });
+    });
+  });
+
   // Preset chips — fills color + config from a canonical character.
   el.querySelectorAll('[data-preset]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -332,7 +377,7 @@ function wireEvents(el) {
       }
       buildDOM(el);
       wireEvents(el);
-      refreshPreview(el);
+      refreshPreview(el, { animate: true });
     });
   });
 
@@ -346,7 +391,7 @@ function wireEvents(el) {
       el.querySelectorAll('.bld-mode-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.mode === mode));
       renderControls(el);
-      refreshPreview(el);
+      refreshPreview(el, { animate: true });
     });
   });
 
@@ -487,10 +532,12 @@ function handleConfigChange(el, field, value) {
 
 // ── Live preview ──────────────────────────────────────────────────────────────
 
-function refreshPreview(el) {
+function refreshPreview(el, opts = {}) {
+  const animate = opts.animate ?? false;
+  _previewGen += 1;
+  const gen = _previewGen;
+
   const summaryEl = el.querySelector('[data-summary]');
-  // In advanced mode the summary is unreliable (rules can be anything),
-  // so show a generic line. In simple mode use the plain-English summary.
   summaryEl.textContent = state.builderMode === 'advanced'
     ? `${(state.rules ?? []).length} rule${(state.rules ?? []).length === 1 ? '' : 's'}, applied top to bottom each round.`
     : behaviorSummary(state.config);
@@ -503,17 +550,102 @@ function refreshPreview(el) {
     return;
   }
 
-  const opponent = compileStrategy(REGISTRY[PREVIEW_OPPONENT_ID]);
+  const oppMeta  = PREVIEW_OPPONENTS.find(o => o.id === state.previewOpponentId) ?? PREVIEW_OPPONENTS[1];
+  const opponent = compileStrategy(REGISTRY[oppMeta.strategyId]);
   const result = runMatch(compiled, opponent, {
     rounds:     PREVIEW_ROUNDS,
     noise:      state.builderMode === 'simple' ? state.config.noise : 0,
     masterSeed: PREVIEW_SEED,
   });
 
-  renderDots(el.querySelector('[data-dots="me"]'),   result.history.map(h => h.aMove), state.color);
-  renderDots(el.querySelector('[data-dots="them"]'), result.history.map(h => h.bMove), REGISTRY.tft.color);
-  el.querySelector('[data-score="me"]').textContent   = result.finalScoreA;
-  el.querySelector('[data-score="them"]').textContent = result.finalScoreB;
+  // Opponent name updates with the picker.
+  el.querySelector('[data-name="them"]').textContent = oppMeta.name;
+
+  const meTokens   = el.querySelector('[data-tokens="me"]');
+  const themTokens = el.querySelector('[data-tokens="them"]');
+  meTokens.innerHTML   = '';
+  themTokens.innerHTML = '';
+
+  const aMoves = result.history.map(h => h.aMove);
+  const bMoves = result.history.map(h => h.bMove);
+
+  if (animate) {
+    // Stagger reveal — one round every ~80ms. Tokens fade-in via CSS.
+    aMoves.forEach((_, r) => {
+      setTimeout(() => {
+        if (gen !== _previewGen) return;  // a newer refresh has started
+        meTokens.appendChild(makeToken(aMoves[r]));
+        themTokens.appendChild(makeToken(bMoves[r]));
+        // Score updates as we go — feels like a live match.
+        el.querySelector('[data-score="me"]').textContent   = result.history[r].aCumulative;
+        el.querySelector('[data-score="them"]').textContent = result.history[r].bCumulative;
+        if (r === aMoves.length - 1) drawChart(el, result, state.color, oppMeta.color);
+      }, 80 * (r + 1));
+    });
+    // Draw chart up-front too so the y-axis range is right even mid-anim
+    drawChart(el, result, state.color, oppMeta.color);
+  } else {
+    aMoves.forEach(m => meTokens.appendChild(makeToken(m, /*instant*/true)));
+    bMoves.forEach(m => themTokens.appendChild(makeToken(m, true)));
+    el.querySelector('[data-score="me"]').textContent   = result.finalScoreA;
+    el.querySelector('[data-score="them"]').textContent = result.finalScoreB;
+    drawChart(el, result, state.color, oppMeta.color);
+  }
+}
+
+function makeToken(move, instant = false) {
+  const span = document.createElement('span');
+  span.className = `bld-token bld-token-${move}${instant ? ' instant' : ''}`;
+  span.title = move === 'C' ? 'Shared' : 'Took';
+  return span;
+}
+
+// Draw cumulative-score line chart for both players. Reuses the canvas
+// in the preview section. Lines in the player and opponent colors.
+function drawChart(el, result, myColor, themColor) {
+  const canvas = el.querySelector('[data-chart]');
+  if (!canvas) return;
+  // Match canvas resolution to the displayed pixel size for crisp lines.
+  const cssW = canvas.clientWidth  || 320;
+  const cssH = canvas.clientHeight || 60;
+  const dpr  = window.devicePixelRatio || 1;
+  if (canvas.width !== cssW * dpr || canvas.height !== cssH * dpr) {
+    canvas.width  = cssW * dpr;
+    canvas.height = cssH * dpr;
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const n = result.history.length;
+  const maxScore = Math.max(result.finalScoreA, result.finalScoreB, 1);
+  const padX = 4, padY = 6;
+  const xAt = i => padX + (cssW - 2 * padX) * (i / (n - 1 || 1));
+  const yAt = s => cssH - padY - (cssH - 2 * padY) * (s / maxScore);
+
+  // Faint horizontal grid lines at quartiles
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let q = 0; q <= 4; q++) {
+    const y = padY + (cssH - 2 * padY) * (q / 4);
+    ctx.beginPath();
+    ctx.moveTo(padX, y);
+    ctx.lineTo(cssW - padX, y);
+    ctx.stroke();
+  }
+
+  const drawLine = (values, color) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    values.forEach((v, i) => {
+      const x = xAt(i), y = yAt(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  };
+  drawLine(result.history.map(h => h.aCumulative), myColor);
+  drawLine(result.history.map(h => h.bCumulative), themColor);
 }
 
 // The compileable spec depends on which mode the user's editing in.
@@ -529,15 +661,9 @@ function specForPreview() {
     : { ...base, config: state.config };
 }
 
-function renderDots(container, moves, color) {
-  container.innerHTML = moves.map(m =>
-    `<span class="bld-dot bld-dot-${m}" style="${m === 'C' ? `background:${color}` : ''}"></span>`
-  ).join('');
-}
-
 function setPreviewError(el, msg) {
-  el.querySelector('[data-dots="me"]').innerHTML   = `<span class="bld-error">${msg}</span>`;
-  el.querySelector('[data-dots="them"]').innerHTML = '';
+  el.querySelector('[data-tokens="me"]').innerHTML   = `<span class="bld-error">${msg}</span>`;
+  el.querySelector('[data-tokens="them"]').innerHTML = '';
 }
 
 // ── Behavior summary in plain English ─────────────────────────────────────────
