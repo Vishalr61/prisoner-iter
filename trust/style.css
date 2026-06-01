@@ -1335,17 +1335,49 @@ h1, h2, .heading {
 
 .bld-header {
   padding: 0 24px;
+  position: relative;
+  min-height: 80px;
 }
+
+/* When a preset is active, its character's silhouette fades in behind
+   the title as a watermark. Big visual signal of which character the
+   user's modifying — without competing with the title text. */
+.bld-header-watermark {
+  position: absolute;
+  top: -30px;
+  right: 8px;
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+  opacity: 0.12;
+  filter: blur(0.5px);
+  z-index: 0;
+  animation: bld-watermark-in 500ms ease forwards;
+}
+.bld-header-watermark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+@keyframes bld-watermark-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 0.12; transform: scale(1); }
+}
+
 .bld-title {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: clamp(1.6rem, 6vw, 2rem);
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
   font-weight: 600;
   color: var(--fg);
+  position: relative;
+  z-index: 1;
 }
 .bld-subtitle {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--fg-dim);
   margin-top: 4px;
+  position: relative;
+  z-index: 1;
 }
 
 .bld-identity {
@@ -1460,6 +1492,23 @@ h1, h2, .heading {
   border-radius: 50%;
   background: var(--preset-color);
   flex-shrink: 0;
+}
+
+/* Each preset chip now carries a tiny silhouette of the character it
+   represents. Brings the campaign's visual vocabulary into the builder
+   so the cast feels present, not just named. */
+.bld-preset-silhouette {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.bld-preset-silhouette svg {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 
 /* Sections inside the controls container don't inherit .bld-wrap's gap,

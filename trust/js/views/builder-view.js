@@ -8,6 +8,7 @@ import { compileStrategy, configToRules, encodeStrategy } from '../../../core/st
 import { REGISTRY }                        from '../../../core/registry.js';
 import { runMatch }                        from '../../../core/match.js';
 import { saveUserStrategy }                from '../progress.js';
+import { buildSilhouette }                 from '../silhouette.js';
 
 const PREVIEW_ROUNDS = 20;
 const PREVIEW_SEED   = 1;
@@ -137,6 +138,11 @@ function buildDOM(el) {
   el.innerHTML = `
     <div class="bld-wrap" style="--bld-color:${state.color}">
       <header class="bld-header">
+        ${state.startedFromPresetId ? `
+          <div class="bld-header-watermark" aria-hidden="true">
+            ${buildSilhouette(state.startedFromPresetId, state.color, 220)}
+          </div>
+        ` : ''}
         <h1 class="bld-title">Build a player</h1>
         <p class="bld-subtitle">Make their choices. Watch them play Maya.</p>
       </header>
@@ -150,7 +156,7 @@ function buildDOM(el) {
             const cls = isModified ? ' modified' : (isActive ? ' selected' : '');
             return `
               <button class="bld-preset-chip${cls}" data-preset="${c.id}" style="--preset-color:${c.color}">
-                <span class="bld-preset-pip"></span>${c.name}
+                <span class="bld-preset-silhouette">${buildSilhouette(c.id, c.color, 24)}</span>${c.name}
               </button>
             `;
           }).join('')}
