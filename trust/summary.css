@@ -1,0 +1,81 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Match summary + campaign-end overhaul (additive).
+   Load AFTER style.css. Scoped under .smry / #view-summary and .cend /
+   #view-campaign-end. The old .summary-* rules in style.css go unused.
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --fg-faint: #6a6259;
+  --paper:    #161412;
+  --rule:     #221f1d;
+  --serif: 'Fraunces', Georgia, serif;
+  --sans:  'Inter', system-ui, sans-serif;
+  --mono:  'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+#view-summary, #view-campaign-end { justify-content: flex-start; }
+
+/* ── Summary ───────────────────────────────────────────────────────────── */
+.smry {
+  width: 100%; max-width: 460px; margin: auto;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: clamp(24px, 5vh, 38px);
+  padding: clamp(48px, 10vh, 96px) 4px clamp(28px, 6vh, 52px);
+}
+.smry-kicker { display: flex; align-items: center; gap: 11px; white-space: nowrap; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-faint); }
+.smry-kicker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--char-color, var(--fg-dim)); box-shadow: 0 0 12px var(--char-color, transparent); }
+
+.smry-scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 18px; width: 100%; }
+.smry-side { display: flex; flex-direction: column; gap: 6px; }
+.smry-who { font-family: var(--sans); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
+.smry-who.them { color: var(--char-color, var(--fg-dim)); }
+.smry-val { font-family: var(--serif); font-size: clamp(2.6rem, 11vw, 3.6rem); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.smry-val.you  { color: var(--fg); }
+.smry-val.them { color: var(--char-color, var(--fg-dim)); }
+.smry-lead { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); white-space: nowrap; }
+
+.smry-track { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 300px; }
+.smry-seg { width: 12px; height: 12px; border-radius: 50%; background: var(--rule); outline: 2px solid var(--bg); }
+.smry-seg.mutual-share { background: var(--share); }
+.smry-seg.mutual-take  { background: var(--fg-faint); }
+.smry-seg.exploited    { background: var(--take); }
+.smry-seg.exploiter    { background: var(--share-dim); }
+.smry-seg.trigger      { background: transparent; box-shadow: inset 0 0 0 2px var(--take); }
+
+.smry-text { font-family: var(--serif); font-size: clamp(1.12rem, 4.4vw, 1.34rem); line-height: 1.55; color: var(--fg); max-width: 38ch; text-wrap: pretty; }
+.smry-text p + p { margin-top: 14px; }
+
+.smry-continue {
+  appearance: none; cursor: pointer; margin-top: 4px;
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--char-color, var(--fg)); color: #0e0d0c;
+  border: none; border-radius: 999px; padding: 14px 28px;
+  font-family: var(--sans); font-size: 0.98rem; font-weight: 600;
+  transition: transform 110ms ease, filter 160ms ease;
+}
+.smry-continue:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.smry-continue:active { transform: scale(0.97); }
+.smry-continue .arr { transition: transform 200ms ease; }
+.smry-continue:hover .arr { transform: translateX(3px); }
+
+/* Stagger */
+.smry-scores, .smry-track, .smry-text, .smry-continue { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
+.smry-scores.shown, .smry-track.shown, .smry-text.shown, .smry-continue.shown { opacity: 1; transform: none; }
+
+/* ── Campaign end ──────────────────────────────────────────────────────── */
+.cend {
+  width: 100%; max-width: 460px; margin: auto;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: clamp(20px, 4.5vh, 34px);
+  padding: clamp(48px, 12vh, 110px) 8px clamp(28px, 6vh, 52px);
+}
+.cend-kicker { display: flex; align-items: center; gap: 11px; white-space: nowrap; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--fg-faint); }
+.cend-kicker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fg-dim); }
+.cend-title { font-family: var(--serif); font-weight: 600; font-size: clamp(2rem, 8vw, 3rem); line-height: 1.02; letter-spacing: -0.02em; color: var(--fg); }
+.cend-deck { font-family: var(--serif); font-style: italic; font-size: clamp(1.05rem, 3.6vw, 1.3rem); line-height: 1.5; color: var(--fg-dim); max-width: 32ch; text-wrap: pretty; }
+.cend-actions { display: flex; flex-direction: column; gap: 11px; width: 100%; max-width: 320px; margin-top: 6px; }
+.cend-actions .wsp-btn { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .smry-scores, .smry-track, .smry-text, .smry-continue { opacity: 1 !important; transform: none !important; }
+}

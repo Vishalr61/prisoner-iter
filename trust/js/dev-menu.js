@@ -17,6 +17,7 @@ const ITEMS = [
   // shouldn't wipe userStrategies / experiments / preferences.
   { label: 'Builder',      action: () => navigate('builder') },
   { label: 'Lab',          action: () => navigate('lab') },
+  { label: 'Replicator',   action: () => navigate('replicator') },
 ];
 
 export function initDevMenu() {

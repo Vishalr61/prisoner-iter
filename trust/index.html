@@ -9,119 +9,52 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="intro.css" />
+  <link rel="stylesheet" href="match.css" />
+  <link rel="stylesheet" href="summary.css" />
+  <link rel="stylesheet" href="reveal.css" />
   <link rel="stylesheet" href="builder.css" />
+  <link rel="stylesheet" href="compete.css" />
 </head>
 <body>
 
-  <!-- ── View: Cold open — DOM built by intro.js ───────────────────────────── -->
+  <!-- ── View: Cold open (markup built by intro.js) ───────────────────────── -->
   <section id="view-cold-open" class="view" role="main"></section>
 
-  <!-- ── View: Dilemma — DOM built by intro.js ─────────────────────────────── -->
+  <!-- ── View: Dilemma (markup built by intro.js) ─────────────────────────── -->
   <section id="view-dilemma" class="view" role="main"></section>
 
-  <!-- ── View: Character intro card ───────────────────────────────────────── -->
+  <!-- ── View: Character intro card (filled by main.js renderIntroCard) ───── -->
   <section id="view-intro-card" class="view" role="main">
     <div class="cardv">
       <div class="cardv-kicker"><span class="dot"></span>Your opponent</div>
       <div class="cardv-hero">
-        <div class="char-silhouette-wrap" aria-hidden="true"><!-- filled by JS --></div>
-        <h1 class="char-name"></h1>
+        <div class="char-silhouette-wrap" aria-hidden="true"><!-- silhouette: JS --></div>
+        <h1 class="char-name"><!-- name: JS --></h1>
       </div>
-      <p class="char-intro-text"></p>
+      <p class="char-intro-text"><!-- narrative: JS --></p>
       <div class="cardv-foot">
-        <button class="cardv-play" data-action="begin-match">Play <span class="arr">→</span></button>
+        <button class="cardv-play" data-action="begin-match">Play <span class="arr">&rarr;</span></button>
         <span class="cardv-foot-note">one game · then you'll understand them</span>
       </div>
     </div>
   </section>
 
-  <!-- ── View: Match ──────────────────────────────────────────────────────── -->
-  <section id="view-match" class="view" role="main">
-    <div class="match-header w-full">
-      <span class="match-char-pip" aria-hidden="true"></span>
-      <span class="match-char-name"></span>
-      <span class="match-round-label"></span>
-    </div>
+  <!-- ── View: Match — DOM built by match-view.js ─────────────────────────── -->
+  <section id="view-match" class="view" role="main"></section>
 
-    <div class="match-body">
-      <div class="match-card">
-        <!-- Scores -->
-        <div class="score-bar">
-          <div class="score-side">
-            <span class="score-who">You</span>
-            <span class="score-value you">0</span>
-          </div>
-          <div class="score-side" style="align-items:flex-end;">
-            <span class="score-who them"></span>
-            <span class="score-value them" style="text-align:right;">0</span>
-          </div>
-        </div>
-
-        <!-- Move reveal -->
-        <div class="round-reveal">
-          <div class="moves-row">
-            <div class="move-cell">
-              <span class="move-label">You</span>
-              <div class="move-token empty" data-side="you" aria-live="polite"></div>
-            </div>
-            <span class="move-vs">vs</span>
-            <div class="move-cell" style="align-items:flex-end;">
-              <span class="move-label" style="text-align:right;">Them</span>
-              <div class="move-token empty" data-side="them" aria-live="polite"></div>
-            </div>
-          </div>
-          <p class="round-outcome" aria-live="polite"></p>
-        </div>
-
-        <!-- Outcome dots -->
-        <div class="dots-row" aria-hidden="true"></div>
-      </div>
-    </div>
-
-    <div class="btn-area">
-      <button class="btn btn-share" data-action="share">Share</button>
-      <button class="btn btn-take"  data-action="take">Take</button>
-    </div>
-  </section>
-
-  <!-- ── View: Match summary ──────────────────────────────────────────────── -->
-  <section id="view-summary" class="view" role="main">
-    <div class="summary-body">
-      <div class="summary-final-scores">
-        <div class="summary-score">
-          <span class="summary-score-who">You</span>
-          <span class="summary-score-value you"></span>
-        </div>
-        <span class="summary-score-divider">—</span>
-        <div class="summary-score">
-          <span class="summary-score-who them"></span>
-          <span class="summary-score-value them"></span>
-        </div>
-      </div>
-
-      <div class="summary-dots" aria-hidden="true"></div>
-
-      <div class="summary-text" aria-live="polite"></div>
-    </div>
-
-    <div class="btn-area">
-      <button class="btn btn-neutral" data-action="continue">Continue →</button>
-    </div>
-  </section>
+  <!-- ── View: Match summary — DOM built by summary-view.js ──────────────── -->
+  <section id="view-summary" class="view" role="main"></section>
 
   <!-- ── View: Campaign end ──────────────────────────────────────────────── -->
   <section id="view-campaign-end" class="view" role="main">
-    <div class="char-intro-body" style="gap:20px;">
-      <h1 class="heading" style="font-size:clamp(1.4rem,6vw,2rem); text-align:center;">
-        You've met everyone.
-      </h1>
-      <p class="char-intro-text" style="text-align:center; color:var(--fg-dim);">
-        Six people. Six ways of playing the same game.
-      </p>
-    </div>
-    <div class="btn-area">
-      <button class="btn btn-primary" data-action="reveal">See what they were →</button>
-      <button class="btn btn-ghost"   data-action="play-again">Play again</button>
+    <div class="cend">
+      <div class="cend-kicker"><span class="dot"></span>The campaign &middot; complete</div>
+      <h1 class="cend-title">You've met everyone.</h1>
+      <p class="cend-deck">Six people. Six ways of playing the same game.</p>
+      <div class="cend-actions">
+        <button class="wsp-btn wsp-btn-primary" data-action="reveal">See what they were &rarr;</button>
+        <button class="wsp-btn wsp-btn-ghost" data-action="play-again">Play again</button>
+      </div>
     </div>
   </section>
 
@@ -136,6 +69,9 @@
 
   <!-- ── View: Lab — DOM built by lab-view.js ──────────────────────────────── -->
   <section id="view-lab" class="view" role="main"></section>
+
+  <!-- ── View: Replicator — DOM built by replicator-view.js ────────────────── -->
+  <section id="view-replicator" class="view" role="main"></section>
 
   <script type="module" src="js/main.js"></script>
 </body>
