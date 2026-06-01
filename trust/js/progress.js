@@ -142,3 +142,27 @@ export function deleteUserStrategy(id) {
   state.userStrategies = (state.userStrategies || []).filter(s => s.id !== id);
   save(state);
 }
+
+// ── Experiments (Phase 3 lab) ────────────────────────────────────────────────
+
+// An experiment is a named environment snapshot:
+//   { id, name, createdAt, env: { selected, payoffs, noise, rounds } }
+// The schema's experiments block (declared in Phase 0, unused until now)
+// is where these live.
+
+export function getExperiments() {
+  return load()?.experiments ?? [];
+}
+
+export function saveExperiment(experiment) {
+  const state = load() || EMPTY_STATE();
+  state.experiments = state.experiments || [];
+  state.experiments.push(experiment);
+  save(state);
+}
+
+export function deleteExperiment(id) {
+  const state = load() || EMPTY_STATE();
+  state.experiments = (state.experiments || []).filter(e => e.id !== id);
+  save(state);
+}

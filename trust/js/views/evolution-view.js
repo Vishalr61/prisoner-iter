@@ -213,12 +213,16 @@ function buildDOM(el) {
 
     <div class="evo-actions">
       <button class="btn btn-primary" data-action="build">Now build one →</button>
+      <button class="btn btn-ghost"   data-action="lab">Open the lab</button>
       <button class="btn btn-ghost"   data-action="play-again">Play again</button>
     </div>
   `;
 
   el.querySelector('[data-action="build"]')
     ?.addEventListener('click', () => go('builder'));
+
+  el.querySelector('[data-action="lab"]')
+    ?.addEventListener('click', () => go('lab'));
 
   // Delete-user-strategy buttons. Re-show the view after deletion so the
   // board reflects the new roster from scratch.
