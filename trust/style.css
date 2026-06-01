@@ -1328,6 +1328,9 @@ h1, h2, .heading {
      Identity is short, so let summary slip into the row beside it. */
   .bld-summary-card     { grid-column: 2; margin: 0; }
   .bld-preview          { grid-column: 2; }
+  /* Section cards no longer need horizontal margin — grid cells provide
+     the gutter via the wrap's column-gap. */
+  .bld-section          { margin: 0; }
 }
 
 .bld-header {
@@ -1424,8 +1427,11 @@ h1, h2, .heading {
 }
 .bld-preset-chip:hover {
   border-color: var(--preset-color);
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.04);
   transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 4px 14px color-mix(in srgb, var(--preset-color) 20%, transparent);
 }
 .bld-preset-chip:active { transform: scale(0.97); }
 
@@ -1457,15 +1463,28 @@ h1, h2, .heading {
 }
 
 /* Sections inside the controls container don't inherit .bld-wrap's gap,
-   so give them their own breathing room. */
+   so give them their own breathing room. Tighter now that each section
+   is its own card with internal padding. */
 .bld-controls {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 14px;
 }
 
+/* Each control section is a real surface — subtle character-tinted
+   background, faint border, stacked shadow. Replaces the previous
+   transparent-text-on-page treatment. */
 .bld-section {
-  padding: 0 24px;
+  margin: 0 24px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--bld-color) 5%, transparent) 0%,
+    rgba(255,255,255,0.015) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 4px 18px rgba(0,0,0,0.25);
 }
 .bld-section:empty { display: none; }   /* conditional sections collapse cleanly */
 .bld-label {
@@ -1582,13 +1601,19 @@ h1, h2, .heading {
    what the user chose and what it produces. */
 .bld-summary-card {
   margin: 8px 24px 4px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%);
+  padding: 22px 26px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--bld-color) 8%, transparent) 0%,
+    rgba(255,255,255,0.02) 100%);
   border: 1px solid var(--bld-color);
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 6px 32px color-mix(in srgb, var(--bld-color) 12%, transparent),
+    0 4px 20px rgba(0,0,0,0.3);
 }
 .bld-summary-label {
   font-family: 'Inter', sans-serif;
