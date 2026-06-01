@@ -14,14 +14,14 @@
   --mono:  'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
-/* Free the builder + lab views from the 480px campaign column + centering. */
-#view-builder, #view-lab {
+/* Free the builder + lab + replicator views from the 480px campaign column. */
+#view-builder, #view-lab, #view-replicator {
   max-width: 100%;
   padding: 0;
   align-items: stretch;
   justify-content: flex-start;
 }
-#view-builder.active, #view-lab.active { display: block; }
+#view-builder.active, #view-lab.active, #view-replicator.active { display: block; }
 
 .wsp {
   max-width: 1240px;
@@ -417,3 +417,111 @@
 .wsp .lab-exp-namebar .wsp-btn { padding: 8px 14px; font-size: 0.84rem; }
 .wsp .lab-exp-confirm { flex: 0 0 auto; }
 .wsp .lab-exp-cancel  { flex: 0 0 auto; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Replicator view (Phase 4) — population dynamics.
+   Workshop family. The hero is a stacked area chart that animates
+   left-to-right as generations advance.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.wsp.repl .repl-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+}
+@media (min-width: 940px) {
+  .wsp.repl .repl-grid { grid-template-columns: minmax(280px, 0.85fr) minmax(420px, 1.15fr); align-items: start; }
+  .wsp.repl .repl-stage { position: sticky; top: 28px; }
+}
+.wsp.repl .repl-controls { display: flex; flex-direction: column; gap: 14px; }
+
+/* Arena — hosts the chart, transport, and verdict. */
+.wsp.repl .repl-arena {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -28px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.wsp.repl .repl-arena-head {
+  padding: 16px 22px;
+  display: flex; flex-direction: column; gap: 14px;
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--bld-color) 8%, var(--paper)), var(--paper));
+}
+.wsp.repl .repl-arena-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.wsp.repl .repl-genlabel { font-family: var(--serif); color: var(--bld-color); font-variant-numeric: tabular-nums; }
+
+/* Transport — play/pause + speed pills. */
+.wsp.repl .repl-transport { display: inline-flex; align-items: center; gap: 10px; }
+.wsp.repl .repl-btn-play {
+  width: 38px; height: 38px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bld-color); color: #0e0d0c;
+  border: none; border-radius: 50%; cursor: pointer;
+  font-size: 1rem; font-weight: 600;
+  transition: filter 150ms ease, transform 100ms ease;
+}
+.wsp.repl .repl-btn-play:hover { filter: brightness(1.1); }
+.wsp.repl .repl-btn-play:active { transform: scale(0.96); }
+.wsp.repl .repl-speed { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; }
+.wsp.repl .repl-spd {
+  background: transparent; border: none; color: var(--fg-dim);
+  padding: 5px 11px; border-radius: 999px;
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.04em;
+  cursor: pointer; transition: background 150ms, color 150ms;
+}
+.wsp.repl .repl-spd:hover { color: var(--fg); }
+.wsp.repl .repl-spd.on    { background: var(--bld-color); color: #0e0d0c; }
+
+/* Legend — strategy bands with current pct. */
+.wsp.repl .repl-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px 12px;
+}
+.wsp.repl .repl-legend-row {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--sans); font-size: 0.72rem;
+  color: var(--fg);
+  transition: opacity 200ms ease;
+}
+.wsp.repl .repl-legend-row.faded { opacity: 0.45; }
+.wsp.repl .repl-legend-pip { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.wsp.repl .repl-legend-name { flex: 1; color: var(--fg-dim); }
+.wsp.repl .repl-legend-pct {
+  font-family: var(--mono); font-size: 0.7rem;
+  color: var(--fg); font-variant-numeric: tabular-nums;
+}
+
+/* Chart. */
+.wsp.repl .repl-chart {
+  width: 100%; height: clamp(260px, 38vh, 380px);
+  display: block;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.2));
+}
+
+/* Verdict — appears at end of run. */
+.wsp.repl .repl-verdict {
+  padding: 16px 22px 22px;
+  border-top: 1px solid var(--rule);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.wsp.repl .repl-verdict.shown { opacity: 1; }
+.wsp.repl .repl-verdict-head {
+  font-family: var(--mono); font-size: 0.66rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--fg-faint); margin-bottom: 8px;
+}
+.wsp.repl .repl-verdict-body {
+  font-family: var(--serif); font-size: 1.05rem; line-height: 1.55;
+  color: var(--fg); text-wrap: pretty;
+}
+.wsp.repl .repl-verdict-body b { color: var(--bld-color); }
+.wsp.repl .repl-verdict-sub {
+  display: block; margin-top: 6px;
+  font-family: var(--serif); font-style: italic; font-size: 0.92rem;
+  color: var(--fg-dim);
+}

@@ -212,11 +212,15 @@ function buildDOM(el) {
     </div>
 
     <div class="evo-actions">
-      <button class="btn btn-primary" data-action="build">Now build one →</button>
+      <button class="btn btn-primary" data-action="evolve">Watch them evolve →</button>
+      <button class="btn btn-ghost"   data-action="build">Build a player</button>
       <button class="btn btn-ghost"   data-action="lab">Open the lab</button>
       <button class="btn btn-ghost"   data-action="play-again">Play again</button>
     </div>
   `;
+
+  el.querySelector('[data-action="evolve"]')
+    ?.addEventListener('click', () => go('replicator'));
 
   el.querySelector('[data-action="build"]')
     ?.addEventListener('click', () => go('builder'));

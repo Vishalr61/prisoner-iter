@@ -7,6 +7,7 @@ import { initRevealView, showReveal } from './views/reveal-view.js';
 import { initEvolutionView, showEvolution } from './views/evolution-view.js';
 import { initBuilderView, showBuilder } from './views/builder-view.js';
 import { initLabView, showLab } from './views/lab-view.js';
+import { initReplicatorView, showReplicator } from './views/replicator-view.js';
 import { getSavedProgress, clearProgress, markCampaignDone } from './progress.js';
 import { decodeStrategy } from '../../core/strategy.js';
 import { initDevMenu } from './dev-menu.js'; // DEV ONLY
@@ -15,7 +16,7 @@ import { initDevMenu } from './dev-menu.js'; // DEV ONLY
 
 const VIEWS = [
   'cold-open', 'dilemma', 'intro-card', 'match',
-  'summary', 'campaign-end', 'reveal', 'evolution', 'builder', 'lab',
+  'summary', 'campaign-end', 'reveal', 'evolution', 'builder', 'lab', 'replicator',
 ];
 
 export function navigate(viewName, params = {}) {
@@ -54,6 +55,10 @@ export function navigate(viewName, params = {}) {
   if (viewName === 'lab') {
     showLab();
   }
+
+  if (viewName === 'replicator') {
+    showReplicator();
+  }
 }
 
 // ── Intro card ────────────────────────────────────────────────────────────────
@@ -81,6 +86,7 @@ function boot() {
   initEvolutionView(navigate);
   initBuilderView(navigate);
   initLabView(navigate);
+  initReplicatorView(navigate);
   initDevMenu(); // DEV ONLY
 
   // Campaign-end buttons
