@@ -183,6 +183,11 @@ function buildDOM(el) {
       <div class="bld-controls" data-controls></div>
 
       <section class="bld-summary-card">
+        ${state.startedFromPresetId ? `
+          <div class="bld-summary-mark" aria-hidden="true">
+            ${buildSilhouette(state.startedFromPresetId, state.color, 56)}
+          </div>
+        ` : ''}
         <p class="bld-summary-label">This player will</p>
         <p class="bld-summary" data-summary></p>
       </section>
@@ -238,6 +243,7 @@ function renderControls(el) {
     container.innerHTML = renderSimpleControls();
     renderConditionalSections(el);
   }
+  paintSliders(el);
 }
 
 function renderSimpleControls() {
@@ -574,8 +580,36 @@ function handleConfigChange(el, field, value) {
 
   // Mark the active preset chip as "modified" if config has drifted from it.
   updatePresetChips(el);
+  // Repaint slider fills to reflect the new value(s).
+  paintSliders(el);
 
   refreshPreview(el);
+}
+
+// Paint a "filled-left" gradient onto every range slider so the portion
+// to the left of the thumb is in --bld-color. Reads each slider's
+// current value, computes the pct, sets the background. Called after
+// every render and on slider input.
+function paintSliders(el) {
+  el.querySelectorAll('.bld-slider').forEach(s => {
+    const min = +s.min, max = +s.max, val = +s.value;
+    const pct = ((val - min) / (max - min)) * 100;
+    s.style.background = `linear-gradient(to right,
+      var(--bld-color) 0%,
+      var(--bld-color) ${pct}%,
+      rgba(255,255,255,0.08) ${pct}%,
+      rgba(255,255,255,0.08) 100%)`;
+  });
+}
+
+// Brief scale-pulse on the summary card when its content updates —
+// signals "the thing you just changed produced this result".
+function pulseSummary(el) {
+  const card = el.querySelector('.bld-summary-card');
+  if (!card) return;
+  card.classList.remove('pulse');
+  void card.offsetWidth;  // force reflow so the animation re-fires
+  card.classList.add('pulse');
 }
 
 // Reflect the current preset-vs-config relationship on the preset chips.
@@ -598,9 +632,12 @@ function refreshPreview(el, opts = {}) {
   const gen = _previewGen;
 
   const summaryEl = el.querySelector('[data-summary]');
-  summaryEl.textContent = state.builderMode === 'advanced'
+  const prev = summaryEl.textContent;
+  const next = state.builderMode === 'advanced'
     ? `${(state.rules ?? []).length} rule${(state.rules ?? []).length === 1 ? '' : 's'}, applied top to bottom each round.`
     : behaviorSummary(state.config);
+  summaryEl.textContent = next;
+  if (next !== prev) pulseSummary(el);
 
   let compiled;
   try {
