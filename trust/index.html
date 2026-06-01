@@ -8,83 +8,30 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="intro.css" />
   <link rel="stylesheet" href="builder.css" />
 </head>
 <body>
 
-  <!-- ── View: Cold open ──────────────────────────────────────────────────── -->
-  <section id="view-cold-open" class="view" role="main">
-    <div class="cold-open-text" aria-live="polite">
-      <span class="line">You and a stranger.</span>
-      <span class="line">One choice.</span>
-      <span class="line">Trust them, or take what you can.</span>
-    </div>
-    <p class="cold-open-tap">tap anywhere to continue</p>
-    <button class="btn btn-ghost" data-action="continue" aria-label="Continue"
-      style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;">
-    </button>
-  </section>
+  <!-- ── View: Cold open — DOM built by intro.js ───────────────────────────── -->
+  <section id="view-cold-open" class="view" role="main"></section>
 
-  <!-- ── View: Dilemma ────────────────────────────────────────────────────── -->
-  <section id="view-dilemma" class="view" role="main">
-    <div class="dilemma-body">
-      <p class="dilemma-prose">
-        You can share, or you can take.
-        <span class="pause">They can share, or they can take.</span>
-        <span class="pause">Neither of you can see the other's choice.</span>
-      </p>
-
-      <!-- Reveal (hidden until after choice) -->
-      <div class="dilemma-reveal" style="display:none; flex-direction:column; gap:16px; width:100%;">
-        <div class="reveal-row">
-          <div class="reveal-side reveal-your">
-            <span class="label">You</span>
-            <span class="move-chip"></span>
-          </div>
-          <span class="reveal-vs">vs</span>
-          <div class="reveal-side reveal-their">
-            <span class="label">Stranger</span>
-            <span class="move-chip"></span>
-          </div>
-        </div>
-
-        <div class="reveal-payoff"><!-- filled by JS --></div>
-
-        <div class="after-dilemma">
-          <p class="after-dilemma-text">
-            That's the dilemma.
-            <span class="pause">Now imagine playing it ten times. With the same person.</span>
-            <span class="pause em">Or a hundred.</span>
-          </p>
-        </div>
-      </div>
-
-      <!-- Question (hidden after choice) -->
-      <div class="dilemma-question-wrap">
-        <p class="dilemma-payoff-hint">Both share: 3 pts each &nbsp;·&nbsp; You take, they share: 5 / 0 &nbsp;·&nbsp; Both take: 1 each</p>
-        <p class="dilemma-question">What do you do?</p>
-      </div>
-    </div>
-
-    <div class="btn-area">
-      <button class="btn btn-share" data-action="share">Share</button>
-      <button class="btn btn-take"  data-action="take">Take</button>
-      <!-- Continue appears after reveal -->
-      <button class="btn btn-primary" data-action="continue" style="display:none;">
-        Meet your first opponent →
-      </button>
-    </div>
-  </section>
+  <!-- ── View: Dilemma — DOM built by intro.js ─────────────────────────────── -->
+  <section id="view-dilemma" class="view" role="main"></section>
 
   <!-- ── View: Character intro card ───────────────────────────────────────── -->
   <section id="view-intro-card" class="view" role="main">
-    <div class="char-intro-body">
-      <div class="char-silhouette-wrap" aria-hidden="true"><!-- filled by JS --></div>
-      <h1 class="char-name"></h1>
+    <div class="cardv">
+      <div class="cardv-kicker"><span class="dot"></span>Your opponent</div>
+      <div class="cardv-hero">
+        <div class="char-silhouette-wrap" aria-hidden="true"><!-- filled by JS --></div>
+        <h1 class="char-name"></h1>
+      </div>
       <p class="char-intro-text"></p>
-    </div>
-    <div class="btn-area">
-      <button class="btn btn-neutral" data-action="begin-match">Play →</button>
+      <div class="cardv-foot">
+        <button class="cardv-play" data-action="begin-match">Play <span class="arr">→</span></button>
+        <span class="cardv-foot-note">one game · then you'll understand them</span>
+      </div>
     </div>
   </section>
 
