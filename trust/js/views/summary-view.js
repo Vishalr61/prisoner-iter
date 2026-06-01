@@ -1,43 +1,28 @@
+// Match summary view — post-match recap overhaul.
+// Builds its own DOM (matching the other view modules). Same contract:
+// initSummaryView(go) + showSummary(charIndex, match). main.js is untouched.
+
 import { CHARACTERS } from '../characters.js';
 
 let go = null;
+let el = null;
 
 export function initSummaryView(navigateFn) {
   go = navigateFn;
-  document.getElementById('view-summary')
-    .querySelector('[data-action="continue"]')
-    .addEventListener('click', onContinue);
+  el = document.getElementById('view-summary');
 }
 
 export function showSummary(charIndex, match) {
   const char    = CHARACTERS[charIndex];
   const history = match.getHistory();
-  const el      = document.getElementById('view-summary');
+  el = document.getElementById('view-summary');
+  el.style.setProperty('--char-color', char.color);
+  el.dataset.charIndex = charIndex;
 
-  el.style.setProperty('--char-color', CHARACTERS[charIndex].color);
-
-  // Reset shown state so stagger replays correctly
-  el.querySelector('.summary-final-scores').classList.remove('shown');
-  el.querySelector('.summary-dots').classList.remove('shown');
-  el.querySelector('.summary-text').classList.remove('shown');
-
-  el.querySelector('.summary-score-value.you').textContent  = match.myScore;
-  el.querySelector('.summary-score-value.them').textContent = match.theirScore;
-  el.querySelector('.summary-score-who.them').textContent   = char.name;
-
-  // Dots
-  const dotsEl = el.querySelector('.summary-dots');
-  dotsEl.innerHTML = '';
-  const triggerRound = findGrimTriggerRound(char.strategyId, history);
-  history.forEach(({ outcome }, i) => {
-    const dot = document.createElement('span');
-    dot.className = `dot ${outcome}`;
-    if (i === triggerRound) dot.classList.add('trigger');
-    dotsEl.appendChild(dot);
-  });
+  const margin = match.myScore - match.theirScore;
+  const lead = margin === 0 ? 'even' : margin > 0 ? `you +${margin}` : `${char.name} +${-margin}`;
 
   // Adaptive summary variant. Grim is binary — any defection gets summaryD.
-  // All others: >50% cooperation → summaryC.
   let variant;
   if (char.strategyId === 'grim') {
     variant = history.some(r => r.humanMove === 'D') ? 'summaryD' : 'summaryC';
@@ -45,30 +30,52 @@ export function showSummary(charIndex, match) {
     const coopCount = history.filter(r => r.humanMove === 'C').length;
     variant = coopCount > history.length / 2 ? 'summaryC' : 'summaryD';
   }
-  el.querySelector('.summary-text').innerHTML =
-    char[variant].map(p => `<p>${p}</p>`).join('');
 
-  el.dataset.charIndex = charIndex;
+  const triggerRound = char.strategyId === 'grim' ? history.findIndex(r => r.humanMove === 'D') : -1;
+  const track = history.map((r, i) =>
+    `<span class="smry-seg ${r.outcome}${i === triggerRound ? ' trigger' : ''}"></span>`).join('');
+
+  el.innerHTML = `
+    <div class="smry">
+      <div class="smry-kicker"><span class="dot"></span>You &amp; ${escapeHtml(char.name)} · ${history.length} round${history.length === 1 ? '' : 's'}</div>
+
+      <div class="smry-scores">
+        <div class="smry-side you">
+          <span class="smry-who">You</span>
+          <span class="smry-val you">${match.myScore}</span>
+        </div>
+        <span class="smry-lead">${lead}</span>
+        <div class="smry-side them">
+          <span class="smry-who them">${escapeHtml(char.name)}</span>
+          <span class="smry-val them">${match.theirScore}</span>
+        </div>
+      </div>
+
+      <div class="smry-track">${track}</div>
+
+      <div class="smry-text">${char[variant].map(p => `<p>${escapeHtml(p)}</p>`).join('')}</div>
+
+      <button class="smry-continue" data-action="continue">Continue <span class="arr">&rarr;</span></button>
+    </div>
+  `;
+
+  el.querySelector('[data-action="continue"]').addEventListener('click', onContinue);
 
   go('summary');
 
-  // Stagger content in after the view transition settles
-  setTimeout(() => el.querySelector('.summary-final-scores').classList.add('shown'), 120);
-  setTimeout(() => el.querySelector('.summary-dots').classList.add('shown'),          400);
-  setTimeout(() => el.querySelector('.summary-text').classList.add('shown'),           680);
+  // Stagger in after the view transition settles.
+  const parts = ['.smry-scores', '.smry-track', '.smry-text', '.smry-continue'];
+  parts.forEach((sel, i) => {
+    const node = el.querySelector(sel);
+    if (node) setTimeout(() => node.classList.add('shown'), 140 + i * 260);
+  });
 }
 
 function onContinue() {
-  const charIndex = +document.getElementById('view-summary').dataset.charIndex;
+  const charIndex = +el.dataset.charIndex;
   const next = charIndex + 1;
-  if (next < CHARACTERS.length) {
-    go('intro-card', { characterIndex: next });
-  } else {
-    go('campaign-end');
-  }
+  if (next < CHARACTERS.length) go('intro-card', { characterIndex: next });
+  else go('campaign-end');
 }
 
-function findGrimTriggerRound(strategyId, history) {
-  if (strategyId !== 'grim') return -1;
-  return history.findIndex(r => r.humanMove === 'D');
-}
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
