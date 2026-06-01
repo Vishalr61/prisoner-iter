@@ -1328,21 +1328,56 @@ h1, h2, .heading {
      Identity is short, so let summary slip into the row beside it. */
   .bld-summary-card     { grid-column: 2; margin: 0; }
   .bld-preview          { grid-column: 2; }
+  /* Section cards no longer need horizontal margin — grid cells provide
+     the gutter via the wrap's column-gap. */
+  .bld-section          { margin: 0; }
 }
 
 .bld-header {
   padding: 0 24px;
+  position: relative;
+  min-height: 80px;
 }
+
+/* When a preset is active, its character's silhouette fades in behind
+   the title as a watermark. Big visual signal of which character the
+   user's modifying — without competing with the title text. */
+.bld-header-watermark {
+  position: absolute;
+  top: -30px;
+  right: 8px;
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+  opacity: 0.12;
+  filter: blur(0.5px);
+  z-index: 0;
+  animation: bld-watermark-in 500ms ease forwards;
+}
+.bld-header-watermark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+@keyframes bld-watermark-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 0.12; transform: scale(1); }
+}
+
 .bld-title {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: clamp(1.6rem, 6vw, 2rem);
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
   font-weight: 600;
   color: var(--fg);
+  position: relative;
+  z-index: 1;
 }
 .bld-subtitle {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--fg-dim);
   margin-top: 4px;
+  position: relative;
+  z-index: 1;
 }
 
 .bld-identity {
@@ -1424,8 +1459,11 @@ h1, h2, .heading {
 }
 .bld-preset-chip:hover {
   border-color: var(--preset-color);
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.04);
   transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 4px 14px color-mix(in srgb, var(--preset-color) 20%, transparent);
 }
 .bld-preset-chip:active { transform: scale(0.97); }
 
@@ -1456,16 +1494,46 @@ h1, h2, .heading {
   flex-shrink: 0;
 }
 
+/* Each preset chip now carries a tiny silhouette of the character it
+   represents. Brings the campaign's visual vocabulary into the builder
+   so the cast feels present, not just named. */
+.bld-preset-silhouette {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.bld-preset-silhouette svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 /* Sections inside the controls container don't inherit .bld-wrap's gap,
-   so give them their own breathing room. */
+   so give them their own breathing room. Tighter now that each section
+   is its own card with internal padding. */
 .bld-controls {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 14px;
 }
 
+/* Each control section is a real surface — subtle character-tinted
+   background, faint border, stacked shadow. Replaces the previous
+   transparent-text-on-page treatment. */
 .bld-section {
-  padding: 0 24px;
+  margin: 0 24px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--bld-color) 5%, transparent) 0%,
+    rgba(255,255,255,0.015) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 4px 18px rgba(0,0,0,0.25);
 }
 .bld-section:empty { display: none; }   /* conditional sections collapse cleanly */
 .bld-label {
@@ -1551,57 +1619,104 @@ h1, h2, .heading {
   border-color: var(--bld-color);
 }
 
+/* Range slider — track is set per-instance via paintSliders() in JS
+   to fill the left side with --bld-color. Thumb has a soft glow ring
+   that pulses on hover. */
 .bld-slider {
   width: 100%;
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
+  height: 6px;
+  /* Default background — JS overrides per instance */
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
   outline: none;
+  margin: 6px 0;
 }
 .bld-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--bld-color);
   cursor: pointer;
   border: 2px solid var(--bg);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--bld-color) 20%, transparent),
+    0 2px 8px rgba(0,0,0,0.4);
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+.bld-slider:hover::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 7px color-mix(in srgb, var(--bld-color) 25%, transparent),
+    0 2px 8px rgba(0,0,0,0.4);
+  transform: scale(1.05);
 }
 .bld-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--bld-color);
   cursor: pointer;
   border: 2px solid var(--bg);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--bld-color) 20%, transparent),
+    0 2px 8px rgba(0,0,0,0.4);
 }
 
 /* "This player will…" summary card — the visual centerpiece between
    what the user chose and what it produces. */
 .bld-summary-card {
   margin: 8px 24px 4px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%);
+  padding: 24px 28px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--bld-color) 10%, transparent) 0%,
+    rgba(255,255,255,0.02) 100%);
   border: 1px solid var(--bld-color);
-  border-radius: 10px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 8px 40px color-mix(in srgb, var(--bld-color) 16%, transparent),
+    0 4px 20px rgba(0,0,0,0.35);
+  transition: transform 250ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
 }
+.bld-summary-card.pulse { animation: bld-summary-pulse 280ms ease; }
+@keyframes bld-summary-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.015); }
+  100% { transform: scale(1); }
+}
+
+/* Faint silhouette of the active preset character in the corner —
+   reinforces "this is the player you built" without taking space. */
+.bld-summary-mark {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 56px;
+  height: 56px;
+  opacity: 0.16;
+  pointer-events: none;
+}
+.bld-summary-mark svg { width: 100%; height: 100%; display: block; }
+
 .bld-summary-label {
   font-family: 'Inter', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--bld-color);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 500;
+  letter-spacing: 0.12em;
+  font-weight: 600;
 }
 .bld-summary {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: clamp(1rem, 4vw, 1.15rem);
-  line-height: 1.55;
+  font-size: clamp(1.1rem, 4.2vw, 1.3rem);
+  line-height: 1.5;
   color: var(--fg);
   margin: 0;
 }
@@ -1675,15 +1790,17 @@ h1, h2, .heading {
 
 /* Share / take tokens — semantic green-for-share, red-for-take. Reuses
    the dilemma's visual vocabulary so the builder feels continuous with
-   the game the player just played. */
+   the game the player just played. Larger and more dimensional than
+   before: filled gradient + inset highlight makes each move feel like
+   something handed over (share) or held back (take). */
 .bld-token {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
   display: inline-block;
   opacity: 0;
   transform: scale(0.6);
-  animation: bld-token-in 200ms ease forwards;
+  animation: bld-token-in 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
 }
 .bld-token.instant {
   opacity: 1;
@@ -1691,12 +1808,20 @@ h1, h2, .heading {
   animation: none;
 }
 .bld-token-C {
-  background: var(--share);
-  box-shadow: inset 0 0 0 1px rgba(95, 184, 120, 0.55);
+  background: linear-gradient(135deg, var(--share) 0%, color-mix(in srgb, var(--share) 80%, black) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 0 0 1px rgba(95, 184, 120, 0.55),
+    0 1px 2px rgba(0,0,0,0.3);
 }
 .bld-token-D {
-  background: transparent;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--take) 35%, transparent) 0%,
+    transparent 100%);
   border: 1.5px solid var(--take);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 1px 2px rgba(0,0,0,0.3);
 }
 @keyframes bld-token-in {
   to { opacity: 1; transform: scale(1); }
@@ -1712,12 +1837,13 @@ h1, h2, .heading {
   flex-shrink: 0;
 }
 
-/* Cumulative-score line chart under the preview rows. */
+/* Cumulative-score area chart under the preview rows. Taller now
+   that it carries filled areas + end-of-line score labels. */
 .bld-chart {
   width: 100%;
-  height: 70px;
+  height: 100px;
   display: block;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 .bld-actions {

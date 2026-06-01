@@ -1,0 +1,222 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Player Workshop — builder overhaul styles (additive).
+   Load AFTER style.css. All rules are scoped under .wsp (or #view-builder)
+   so nothing here bleeds into the campaign / match / evolution views.
+   The old .bld-* rules in style.css become dead (unused) — safe to leave.
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --fg-faint: #6a6259;
+  --paper:    #161412;
+  --rule:     #221f1d;
+  --serif: 'Fraunces', Georgia, serif;
+  --sans:  'Inter', system-ui, sans-serif;
+  --mono:  'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* Free the builder view from the 480px campaign column + centering. */
+#view-builder {
+  max-width: 100%;
+  padding: 0;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+#view-builder.active { display: block; }
+
+.wsp {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 56px) clamp(18px, 4vw, 48px) 120px;
+  text-align: left;
+}
+.wsp ::selection { background: color-mix(in oklab, var(--bld-color) 35%, transparent); color: var(--fg); }
+
+/* ── Masthead ──────────────────────────────────────────────────────────── */
+.wsp-masthead { margin-bottom: clamp(24px, 4vw, 44px); }
+.wsp-kicker {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--fg-faint); margin-bottom: 16px;
+}
+.wsp-kicker::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--rule), transparent); }
+.wsp-kicker .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--bld-color); box-shadow: 0 0 14px var(--bld-color); }
+.wsp-title { font-family: var(--serif); font-weight: 600; font-size: clamp(2.4rem, 7vw, 4.2rem); line-height: 0.98; letter-spacing: -0.025em; color: var(--fg); }
+.wsp-title em { font-style: italic; font-weight: 400; color: var(--bld-color); }
+.wsp-deck { margin-top: 14px; max-width: 48ch; font-family: var(--serif); font-size: clamp(1rem, 2.4vw, 1.2rem); font-style: italic; line-height: 1.55; color: var(--fg-dim); text-wrap: pretty; }
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+.wsp-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(28px, 4vw, 56px); }
+@media (min-width: 940px) {
+  .wsp-grid { grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr); align-items: start; }
+  .wsp-arena-col { position: sticky; top: 28px; }
+}
+.wsp-build { display: flex; flex-direction: column; gap: 30px; }
+
+/* ── Identity ──────────────────────────────────────────────────────────── */
+.wsp .id-block { display: flex; flex-direction: column; gap: 16px; }
+.wsp .id-name-wrap { display: flex; align-items: baseline; gap: 12px; }
+.wsp .id-name-num { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.18em; color: var(--fg-faint); text-transform: uppercase; white-space: nowrap; }
+.wsp .id-name {
+  flex: 1; background: transparent; border: none; border-bottom: 1.5px solid var(--border);
+  font-family: var(--serif); font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 500; color: var(--fg);
+  padding: 4px 2px 8px; outline: none; transition: border-color 200ms ease;
+}
+.wsp .id-name::placeholder { color: var(--fg-faint); }
+.wsp .id-name:focus { border-color: var(--bld-color); }
+.wsp .id-swatches { display: flex; flex-wrap: wrap; gap: 9px; }
+.wsp .id-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; transition: transform 140ms ease, box-shadow 140ms ease; }
+.wsp .id-swatch:hover { transform: scale(1.12); }
+.wsp .id-swatch.sel { transform: scale(1.16); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+
+/* ── Presets ───────────────────────────────────────────────────────────── */
+.wsp .presets { display: flex; flex-direction: column; gap: 11px; }
+.wsp .eyebrow { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-faint); }
+.wsp .preset-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.wsp .preset {
+  display: inline-flex; align-items: center; gap: 9px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 999px; padding: 8px 15px 8px 10px;
+  color: var(--fg); font-family: var(--serif); font-size: 0.95rem; cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, transform 120ms ease;
+}
+.wsp .preset:hover { border-color: var(--preset-color); transform: translateY(-1px); }
+.wsp .preset:active { transform: scale(0.97); }
+.wsp .preset.sel, .wsp .preset.mod { border-color: var(--preset-color); box-shadow: inset 0 0 0 1px var(--preset-color); background: color-mix(in oklab, var(--preset-color) 12%, var(--surface)); }
+.wsp .preset.mod::after { content: 'edited'; font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); margin-left: 2px; }
+.wsp .preset .pip { width: 12px; height: 12px; border-radius: 50%; background: var(--preset-color); flex-shrink: 0; }
+
+/* Each preset chip carries the character's abstract silhouette from the
+   campaign's intro cards — Sam's circle, Maya's nested rings, Theo's
+   closed shield, Marcus's triangle, Naomi's oval, Ren's hexagon. Cast
+   members feel present in the workshop, not just named. */
+.wsp .preset .silh { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0; }
+.wsp .preset .silh svg { width: 22px; height: 22px; display: block; }
+
+/* ── Mode toggle ───────────────────────────────────────────────────────── */
+.wsp .mode-toggle { display: inline-flex; align-self: flex-start; gap: 3px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px; }
+.wsp .mode-btn { background: transparent; color: var(--fg-dim); border: none; padding: 8px 20px; border-radius: 999px; font-family: var(--sans); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; transition: background 160ms ease, color 160ms ease; }
+.wsp .mode-btn:hover { color: var(--fg); }
+.wsp .mode-btn.active { background: var(--bld-color); color: #0e0d0c; }
+
+/* ── Spec sheet ────────────────────────────────────────────────────────── */
+.wsp .spec { display: flex; flex-direction: column; gap: 24px; }
+.wsp .section { display: grid; grid-template-columns: 36px 1fr; gap: 14px; padding-bottom: 24px; border-bottom: 1px solid var(--rule); }
+.wsp .section:last-child { border-bottom: none; padding-bottom: 0; }
+.wsp .sec-num { font-family: var(--serif); font-size: 1.5rem; font-weight: 500; font-style: italic; color: var(--fg-faint); line-height: 1; padding-top: 2px; }
+.wsp .sec-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.wsp .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.wsp .sec-title { font-family: var(--sans); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg); white-space: nowrap; }
+.wsp .sec-readout { display: inline-flex; align-items: baseline; gap: 8px; }
+.wsp .sec-region { font-family: var(--serif); font-style: italic; font-size: 0.86rem; color: var(--fg-dim); }
+.wsp .sec-pct { font-family: var(--mono); font-size: 0.82rem; color: var(--bld-color); }
+.wsp .note { font-family: var(--serif); font-style: italic; font-size: 0.92rem; line-height: 1.55; color: var(--fg-dim); text-wrap: pretty; }
+.wsp .note em { color: var(--fg); font-style: italic; }
+
+/* Chip options */
+.wsp .opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.wsp .opt { background: var(--surface); color: var(--fg-dim); border: 1px solid var(--border); border-radius: 999px; padding: 9px 16px; font-family: var(--sans); font-size: 0.86rem; font-weight: 500; cursor: pointer; transition: border-color 150ms ease, color 150ms ease, background 150ms ease, transform 100ms ease; }
+.wsp .opt:hover { color: var(--fg); border-color: var(--fg-faint); }
+.wsp .opt:active { transform: scale(0.96); }
+.wsp .opt.sel { background: var(--bld-color); color: #0e0d0c; border-color: var(--bld-color); font-weight: 600; }
+
+/* Slider */
+.wsp .slider-wrap { padding-top: 4px; }
+.wsp .slider { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: linear-gradient(90deg, var(--bld-color) var(--fill,0%), var(--border) var(--fill,0%)); border-radius: 2px; outline: none; cursor: pointer; }
+.wsp .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--bld-color); border: 2px solid var(--bg); box-shadow: 0 1px 6px rgba(0,0,0,0.5); cursor: pointer; }
+.wsp .slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--bld-color); border: 2px solid var(--bg); cursor: pointer; }
+.wsp .scale-ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; color: var(--fg-faint); margin-top: 8px; }
+
+/* Advanced editor */
+.wsp .adv { display: flex; flex-direction: column; gap: 12px; }
+.wsp .adv-editor { width: 100%; min-height: 240px; background: #0a0908; border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; color: var(--fg); resize: vertical; outline: none; transition: border-color 150ms ease; tab-size: 2; }
+.wsp .adv-editor:focus { border-color: var(--bld-color); }
+.wsp .adv-editor.err { border-color: var(--take); }
+.wsp .adv-error { font-family: var(--mono); font-size: 0.76rem; color: var(--take); line-height: 1.5; }
+.wsp .adv-ref { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 0.78rem; color: var(--fg-dim); background: var(--surface); }
+.wsp .adv-ref summary { cursor: pointer; color: var(--fg); font-weight: 500; font-family: var(--sans); }
+.wsp .adv-ref-line { margin-top: 9px; line-height: 1.6; }
+.wsp .adv-ref-line code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-family: var(--mono); font-size: 0.92em; }
+
+/* ── Arena ─────────────────────────────────────────────────────────────── */
+.wsp .arena { background: var(--paper); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 24px 60px -28px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.03); }
+.wsp .thesis { position: relative; padding: 22px 24px 20px; border-bottom: 1px solid var(--rule); background: linear-gradient(180deg, color-mix(in oklab, var(--bld-color) 8%, var(--paper)), var(--paper)); overflow: hidden; }
+.wsp .thesis-label { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--bld-color); margin-bottom: 8px; position: relative; z-index: 1; }
+.wsp .thesis-text { font-family: var(--serif); font-size: clamp(1.15rem, 2.6vw, 1.45rem); line-height: 1.4; color: var(--fg); text-wrap: pretty; position: relative; z-index: 1; }
+
+/* Faint silhouette of the active preset character in the thesis corner —
+   carries the campaign's visual vocabulary into the Arena hero, anchoring
+   the verdict to a person the player already knows. */
+.wsp .thesis-mark { position: absolute; top: 14px; right: 16px; width: 64px; height: 64px; opacity: 0.18; pointer-events: none; z-index: 0; }
+.wsp .thesis-mark svg { width: 100%; height: 100%; display: block; }
+
+.wsp .arena-head { padding: 16px 24px 12px; display: flex; flex-direction: column; gap: 12px; }
+.wsp .arena-head-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wsp .arena-eyebrow { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-faint); }
+.wsp .arena-replay { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border); border-radius: 999px; color: var(--fg-dim); font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 11px; cursor: pointer; transition: color 150ms, border-color 150ms; }
+.wsp .arena-replay:hover { color: var(--fg); border-color: var(--fg-faint); }
+.wsp .arena-replay svg { width: 12px; height: 12px; }
+.wsp .opp-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.wsp .opp { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 5px 11px 5px 8px; color: var(--fg-dim); font-family: var(--sans); font-size: 0.76rem; cursor: pointer; transition: border-color 150ms, color 150ms, background 150ms; }
+.wsp .opp:hover { color: var(--fg); border-color: var(--fg-faint); }
+.wsp .opp.sel { color: var(--fg); border-color: var(--opp-color); background: color-mix(in oklab, var(--opp-color) 14%, transparent); }
+.wsp .opp .pip { width: 8px; height: 8px; border-radius: 50%; background: var(--opp-color); flex-shrink: 0; }
+
+.wsp .scoreboard { display: flex; align-items: stretch; padding: 8px 24px 14px; gap: 16px; }
+.wsp .score-side { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.wsp .score-side.them { align-items: flex-end; text-align: right; }
+.wsp .score-who { font-family: var(--sans); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); display: flex; align-items: center; gap: 7px; }
+.wsp .score-who .pip { width: 9px; height: 9px; border-radius: 50%; }
+.wsp .score-val { font-family: var(--serif); font-size: clamp(2.2rem, 6vw, 2.9rem); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; transition: color 250ms ease; }
+.wsp .score-val.you  { color: var(--bld-color); }
+.wsp .score-val.them { color: var(--opp-color, var(--fg-dim)); }
+.wsp .score-val.bump { animation: wsp-bump 0.34s ease both; }
+.wsp .score-lead { align-self: center; font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); white-space: nowrap; }
+
+.wsp .grid-rows { padding: 4px 24px 8px; display: flex; flex-direction: column; gap: 8px; }
+.wsp .grid-row { display: flex; align-items: center; gap: 12px; }
+.wsp .grid-tag { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-faint); width: 38px; flex-shrink: 0; }
+.wsp .tokens { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; min-height: 16px; }
+.wsp .tok { height: 16px; border-radius: 3px; opacity: 0; transform: scale(0.5); animation: wsp-tokin 180ms ease forwards; }
+.wsp .tok.instant { opacity: 1; transform: none; animation: none; }
+.wsp .tok.C { background: var(--share); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--share) 60%, transparent); }
+.wsp .tok.D { background: transparent; border: 1.5px solid var(--take); }
+.wsp .tok.me.C { background: var(--bld-color); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--bld-color) 60%, transparent); }
+
+.wsp .chart-wrap { padding: 10px 24px 8px; position: relative; }
+.wsp .chart { width: 100%; height: 120px; display: block; }
+.wsp .chart-caption { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; color: var(--fg-faint); margin-top: 6px; }
+
+.wsp .verdict { padding: 16px 24px 22px; border-top: 1px solid var(--rule); }
+.wsp .verdict-text { font-family: var(--serif); font-style: italic; font-size: 1.02rem; line-height: 1.5; color: var(--fg); text-wrap: pretty; transition: opacity 320ms ease; }
+.wsp .verdict-text b { font-style: normal; font-weight: 600; }
+
+.wsp .stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--rule); transition: opacity 320ms ease; }
+.wsp .stat { padding: 13px 16px; text-align: center; border-right: 1px solid var(--rule); }
+.wsp .stat:last-child { border-right: none; }
+.wsp .stat-num { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--fg); line-height: 1; }
+.wsp .stat-lbl { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); margin-top: 6px; }
+
+/* ── Actions ───────────────────────────────────────────────────────────── */
+.wsp .actions { display: flex; gap: 10px; margin-top: 20px; }
+.wsp .actions .wsp-btn { flex: 1; }
+@media (max-width: 939px) {
+  .wsp .actions { position: sticky; bottom: 0; margin: 20px -18px 0; padding: 14px 18px max(14px, env(safe-area-inset-bottom)); background: linear-gradient(180deg, transparent, var(--bg) 24%); z-index: 20; }
+}
+.wsp .wsp-btn { appearance: none; border: 1px solid transparent; border-radius: 999px; padding: 14px 20px; font-family: var(--sans); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; transition: transform 100ms ease, filter 150ms ease, background 150ms ease, color 150ms ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.wsp .wsp-btn:active { transform: scale(0.97); }
+.wsp .wsp-btn:disabled { opacity: 0.4; pointer-events: none; }
+.wsp .wsp-btn-primary { background: var(--bld-color); color: #0e0d0c; }
+.wsp .wsp-btn-primary:hover { filter: brightness(1.1); }
+.wsp .wsp-btn-ghost { background: transparent; color: var(--fg-dim); border-color: var(--border); }
+.wsp .wsp-btn-ghost:hover { color: var(--fg); border-color: var(--fg-faint); }
+
+/* ── Toast ─────────────────────────────────────────────────────────────── */
+.wsp-toast { position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 12px); background: var(--surface); border: 1px solid var(--bld-color); color: var(--fg); font-size: 0.85rem; padding: 11px 18px; border-radius: 999px; opacity: 0; pointer-events: none; transition: opacity 220ms ease, transform 220ms ease; z-index: 50; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+.wsp-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@keyframes wsp-tokin { to { opacity: 1; transform: scale(1); } }
+@keyframes wsp-bump  { 0%,100% { transform: scale(1); } 40% { transform: scale(1.1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .wsp .tok { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .wsp .score-val.bump { animation: none; }
+}
