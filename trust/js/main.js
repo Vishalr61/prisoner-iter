@@ -6,6 +6,7 @@ import { initSummaryView, showSummary } from './views/summary-view.js';
 import { initRevealView, showReveal } from './views/reveal-view.js';
 import { initEvolutionView, showEvolution } from './views/evolution-view.js';
 import { initBuilderView, showBuilder } from './views/builder-view.js';
+import { initLabView, showLab } from './views/lab-view.js';
 import { getSavedProgress, clearProgress, markCampaignDone } from './progress.js';
 import { decodeStrategy } from '../../core/strategy.js';
 import { initDevMenu } from './dev-menu.js'; // DEV ONLY
@@ -14,7 +15,7 @@ import { initDevMenu } from './dev-menu.js'; // DEV ONLY
 
 const VIEWS = [
   'cold-open', 'dilemma', 'intro-card', 'match',
-  'summary', 'campaign-end', 'reveal', 'evolution', 'builder',
+  'summary', 'campaign-end', 'reveal', 'evolution', 'builder', 'lab',
 ];
 
 export function navigate(viewName, params = {}) {
@@ -49,6 +50,10 @@ export function navigate(viewName, params = {}) {
   if (viewName === 'builder') {
     showBuilder(params);
   }
+
+  if (viewName === 'lab') {
+    showLab();
+  }
 }
 
 // ── Intro card ────────────────────────────────────────────────────────────────
@@ -75,6 +80,7 @@ function boot() {
   initRevealView(navigate);
   initEvolutionView(navigate);
   initBuilderView(navigate);
+  initLabView(navigate);
   initDevMenu(); // DEV ONLY
 
   // Campaign-end buttons

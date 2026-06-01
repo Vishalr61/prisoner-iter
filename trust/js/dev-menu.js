@@ -14,6 +14,7 @@ const ITEMS = [
   { label: 'Reveal',       action: () => { seed({ done: true }); navigate('reveal'); } },
   { label: 'Evolution',    action: () => { seed({ done: true }); navigate('evolution'); } },
   { label: 'Builder',      action: () => { clear(); navigate('builder'); } },
+  { label: 'Lab',          action: () => { clear(); navigate('lab'); } },
 ];
 
 export function initDevMenu() {
