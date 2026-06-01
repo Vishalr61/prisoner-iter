@@ -8,7 +8,7 @@
 
 import { REGISTRY }       from '../../../core/registry.js';
 import { runRoundRobin }  from '../../../core/tournament.js';
-import { getUserStrategies } from '../progress.js';
+import { getUserStrategies, getExperiments, saveExperiment, deleteExperiment } from '../progress.js';
 import { buildSilhouette } from '../silhouette.js';
 
 const CANONICAL_IDS = ['allC', 'allD', 'tft', 'grim', 'tf2t', 'pavlov', 'gtft', 'stft', 'rand'];
@@ -74,6 +74,8 @@ function buildDOM(el) {
         <p class="wsp-deck">There is no universal best strategy — only the right strategy for the environment. Move a slider; watch the ranking change.</p>
       </header>
 
+      ${experimentsHTML()}
+
       <div class="wsp-grid">
         <div class="wsp-build">
           <div class="wsp-controls">
@@ -112,6 +114,70 @@ function buildDOM(el) {
       </div>
     </div>
   `;
+}
+
+// ── Experiments bar ──────────────────────────────────────────────────────────
+
+function experimentsHTML() {
+  const list = getExperiments();
+  const chips = list.map(exp => {
+    const active = experimentMatches(exp, state);
+    return `
+      <div class="lab-exp${active ? ' active' : ''}" data-exp-id="${exp.id}" title="${escapeHtml(envSummary(exp.env))}">
+        <button class="lab-exp-load" data-exp-load="${exp.id}">${escapeHtml(exp.name)}</button>
+        <button class="lab-exp-del"  data-exp-del="${exp.id}" aria-label="Delete">×</button>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <section class="lab-experiments">
+      <span class="eyebrow">Experiments</span>
+      <div class="lab-exp-chips">
+        ${chips || '<span class="lab-exp-empty">No saved environments yet</span>'}
+        <button class="lab-exp-add" data-exp-add>＋ Save current</button>
+      </div>
+      <div class="lab-exp-namebar" data-exp-namebar hidden>
+        <input class="lab-exp-name-input" type="text" placeholder="Name this environment…" data-exp-name maxlength="32" />
+        <button class="wsp-btn wsp-btn-primary lab-exp-confirm" data-exp-confirm>Save</button>
+        <button class="wsp-btn wsp-btn-ghost lab-exp-cancel"   data-exp-cancel>Cancel</button>
+      </div>
+    </section>
+  `;
+}
+
+// Compact human-readable env summary, used in the chip tooltip.
+function envSummary(env) {
+  const parts = [`${env.selected.length} players`, `${env.rounds}r`];
+  if (env.noise > 0) parts.push(`${Math.round(env.noise * 100)}% noise`);
+  const p = env.payoffs;
+  if (p.R !== 3 || p.T !== 5 || p.P !== 1 || p.S !== 0) parts.push(`payoffs ${p.R}/${p.T}/${p.P}/${p.S}`);
+  return parts.join(' · ');
+}
+
+function snapshotEnv(s) {
+  return {
+    selected: [...s.selected].sort(),
+    payoffs:  { ...s.payoffs },
+    noise:    s.noise,
+    rounds:   s.rounds,
+  };
+}
+
+function experimentMatches(exp, s) {
+  if (exp.env.rounds !== s.rounds || exp.env.noise !== s.noise) return false;
+  const p = exp.env.payoffs;
+  if (p.R !== s.payoffs.R || p.T !== s.payoffs.T || p.P !== s.payoffs.P || p.S !== s.payoffs.S) return false;
+  if (exp.env.selected.length !== s.selected.size) return false;
+  for (const id of exp.env.selected) if (!s.selected.has(id)) return false;
+  return true;
+}
+
+function loadExperimentIntoState(exp) {
+  state.selected = new Set(exp.env.selected);
+  state.payoffs  = { ...exp.env.payoffs };
+  state.noise    = exp.env.noise;
+  state.rounds   = exp.env.rounds;
 }
 
 function rosterSectionHTML() {
@@ -261,6 +327,96 @@ function wireEvents(el) {
     rerun(el);
   });
   el.querySelector('[data-action="back"]').addEventListener('click', () => go && go('evolution'));
+
+  wireExperimentEvents(el);
+}
+
+// Experiments — save/load/delete + the inline name input.
+// Two-layer wiring: the delegated load/delete listener is registered ONCE
+// per view-root (guarded by a flag); the namebar + add buttons are
+// re-bound every time the section re-renders.
+function wireExperimentEvents(el) {
+  bindNameBarButtons(el);
+
+  if (el.__expDelegated) return;
+  el.__expDelegated = true;
+  el.addEventListener('click', e => {
+    const loadBtn = e.target.closest('[data-exp-load]');
+    if (loadBtn) {
+      const id = loadBtn.dataset.expLoad;
+      const exp = getExperiments().find(x => x.id === id);
+      if (!exp) return;
+      loadExperimentIntoState(exp);
+      buildDOM(el);
+      wireEvents(el);
+      rerun(el);
+      return;
+    }
+    const delBtn = e.target.closest('[data-exp-del]');
+    if (delBtn) {
+      e.stopPropagation();
+      const id = delBtn.dataset.expDel;
+      const exp = getExperiments().find(x => x.id === id);
+      if (!exp) return;
+      if (!confirm(`Delete experiment "${exp.name}"?`)) return;
+      deleteExperiment(id);
+      refreshExperimentsBar(el);
+      return;
+    }
+  });
+}
+
+function bindNameBarButtons(el) {
+  const nameBar   = el.querySelector('[data-exp-namebar]');
+  const nameInput = el.querySelector('[data-exp-name]');
+  if (!nameBar || !nameInput) return;
+
+  el.querySelector('[data-exp-add]')?.addEventListener('click', () => {
+    nameBar.hidden = false;
+    nameInput.value = '';
+    nameInput.focus();
+  });
+
+  el.querySelector('[data-exp-cancel]')?.addEventListener('click', () => { nameBar.hidden = true; });
+
+  const confirmSave = () => {
+    const name = (nameInput.value || '').trim();
+    if (!name) { nameInput.focus(); return; }
+    saveExperiment({
+      id: `exp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      name,
+      createdAt: Date.now(),
+      env: snapshotEnv(state),
+    });
+    nameBar.hidden = true;
+    refreshExperimentsBar(el);
+  };
+  el.querySelector('[data-exp-confirm]')?.addEventListener('click', confirmSave);
+  nameInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmSave();
+    else if (e.key === 'Escape') { nameBar.hidden = true; }
+  });
+}
+
+// Replace only the experiments section — preserves the user's editing
+// context (slider drags, name input focus, etc.) elsewhere on the page.
+function refreshExperimentsBar(el) {
+  const section = el.querySelector('.lab-experiments');
+  if (!section) return;
+  const fresh = document.createElement('div');
+  fresh.innerHTML = experimentsHTML();
+  section.replaceWith(fresh.firstElementChild);
+  bindNameBarButtons(el);
+}
+
+// Keep the "active" chip in sync with the current env without rebuilding
+// the whole section (which would lose user focus on inputs). Cheap.
+function updateActiveExperimentChip(el) {
+  el.querySelectorAll('.lab-exp').forEach(chip => {
+    const id = chip.dataset.expId;
+    const exp = getExperiments().find(x => x.id === id);
+    chip.classList.toggle('active', !!exp && experimentMatches(exp, state));
+  });
 }
 
 // 150ms debounce so dragging a slider doesn't queue dozens of runs.
@@ -308,6 +464,8 @@ function rerun(el) {
     result.ranked[0]?.score ?? '—',
     (result.ranked[0]?.score ?? 0) - (result.ranked[result.ranked.length - 1]?.score ?? 0),
     specs.length);
+
+  updateActiveExperimentChip(el);
 }
 
 function renderRankingChart(el, result) {

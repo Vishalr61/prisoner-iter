@@ -350,3 +350,70 @@
   display: block; font-family: var(--serif); font-size: 0.95rem;
   line-height: 1.6; color: var(--fg);
 }
+
+/* Experiments bar — saved environment snapshots. Sits below the masthead,
+   above the wsp-grid. Each chip is a one-click reload. */
+.wsp .lab-experiments {
+  margin-bottom: clamp(20px, 3vw, 32px);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.wsp .lab-exp-chips {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.wsp .lab-exp-empty {
+  font-family: var(--serif); font-style: italic; font-size: 0.88rem;
+  color: var(--fg-faint);
+}
+.wsp .lab-exp {
+  display: inline-flex; align-items: stretch; overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.wsp .lab-exp:hover { border-color: var(--fg-faint); }
+.wsp .lab-exp.active {
+  border-color: var(--bld-color);
+  box-shadow: inset 0 0 0 1px var(--bld-color);
+  background: color-mix(in oklab, var(--bld-color) 10%, var(--surface));
+}
+.wsp .lab-exp-load {
+  background: transparent; border: none; color: var(--fg);
+  font-family: var(--serif); font-size: 0.92rem;
+  padding: 7px 6px 7px 14px; cursor: pointer; line-height: 1.2;
+}
+.wsp .lab-exp-load:hover { color: var(--bld-color); }
+.wsp .lab-exp-del {
+  background: transparent; border: none; color: var(--fg-faint);
+  font-size: 1.15rem; line-height: 1;
+  padding: 0 11px 0 6px; cursor: pointer;
+  transition: color 120ms ease;
+}
+.wsp .lab-exp-del:hover { color: var(--take); }
+.wsp .lab-exp-add {
+  background: transparent; border: 1px dashed var(--border); color: var(--fg-dim);
+  border-radius: 999px; padding: 7px 14px;
+  font-family: var(--sans); font-size: 0.82rem; cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.wsp .lab-exp-add:hover { color: var(--bld-color); border-color: var(--bld-color); border-style: solid; }
+
+/* Inline name input row — revealed when "+ Save current" is clicked. */
+.wsp .lab-exp-namebar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--bld-color);
+  border-radius: 10px;
+}
+.wsp .lab-exp-namebar[hidden] { display: none; }
+.wsp .lab-exp-name-input {
+  flex: 1; min-width: 160px;
+  background: transparent; border: none; outline: none;
+  font-family: var(--serif); font-size: 1rem; color: var(--fg);
+  padding: 6px 2px;
+}
+.wsp .lab-exp-name-input::placeholder { color: var(--fg-faint); }
+.wsp .lab-exp-namebar .wsp-btn { padding: 8px 14px; font-size: 0.84rem; }
+.wsp .lab-exp-confirm { flex: 0 0 auto; }
+.wsp .lab-exp-cancel  { flex: 0 0 auto; }

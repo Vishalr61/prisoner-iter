@@ -13,8 +13,10 @@ const ITEMS = [
   { label: 'Campaign end', action: () => { seed({ done: true }); navigate('campaign-end'); } },
   { label: 'Reveal',       action: () => { seed({ done: true }); navigate('reveal'); } },
   { label: 'Evolution',    action: () => { seed({ done: true }); navigate('evolution'); } },
-  { label: 'Builder',      action: () => { clear(); navigate('builder'); } },
-  { label: 'Lab',          action: () => { clear(); navigate('lab'); } },
+  // Builder and Lab don't depend on campaign state; navigating to them
+  // shouldn't wipe userStrategies / experiments / preferences.
+  { label: 'Builder',      action: () => navigate('builder') },
+  { label: 'Lab',          action: () => navigate('lab') },
 ];
 
 export function initDevMenu() {
