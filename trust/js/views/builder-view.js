@@ -697,14 +697,14 @@ function makeToken(move, instant = false) {
   return span;
 }
 
-// Draw cumulative-score line chart for both players. Reuses the canvas
-// in the preview section. Lines in the player and opponent colors.
+// Draw a filled-area cumulative-score chart for both players. The fill
+// under each line in the player and opponent colors at low opacity,
+// with a crisper line on top and an end-of-line score label.
 function drawChart(el, result, myColor, themColor) {
   const canvas = el.querySelector('[data-chart]');
   if (!canvas) return;
-  // Match canvas resolution to the displayed pixel size for crisp lines.
   const cssW = canvas.clientWidth  || 320;
-  const cssH = canvas.clientHeight || 60;
+  const cssH = canvas.clientHeight || 100;
   const dpr  = window.devicePixelRatio || 1;
   if (canvas.width !== cssW * dpr || canvas.height !== cssH * dpr) {
     canvas.width  = cssW * dpr;
@@ -716,22 +716,32 @@ function drawChart(el, result, myColor, themColor) {
 
   const n = result.history.length;
   const maxScore = Math.max(result.finalScoreA, result.finalScoreB, 1);
-  const padX = 4, padY = 6;
-  const xAt = i => padX + (cssW - 2 * padX) * (i / (n - 1 || 1));
+  const padX = 4, padY = 8, padRight = 38; // extra right padding for score labels
+  const xAt = i => padX + (cssW - padX - padRight) * (i / (n - 1 || 1));
   const yAt = s => cssH - padY - (cssH - 2 * padY) * (s / maxScore);
 
   // Faint horizontal grid lines at quartiles
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
   ctx.lineWidth = 1;
   for (let q = 0; q <= 4; q++) {
     const y = padY + (cssH - 2 * padY) * (q / 4);
     ctx.beginPath();
     ctx.moveTo(padX, y);
-    ctx.lineTo(cssW - padX, y);
+    ctx.lineTo(cssW - padRight, y);
     ctx.stroke();
   }
 
-  const drawLine = (values, color) => {
+  // Helper to draw a filled area + stroked line.
+  const drawSeries = (values, color) => {
+    // Filled area below the line
+    ctx.fillStyle = hexWithAlpha(color, 0.18);
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), cssH - padY);
+    values.forEach((v, i) => ctx.lineTo(xAt(i), yAt(v)));
+    ctx.lineTo(xAt(values.length - 1), cssH - padY);
+    ctx.closePath();
+    ctx.fill();
+    // Line on top
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -741,8 +751,28 @@ function drawChart(el, result, myColor, themColor) {
     });
     ctx.stroke();
   };
-  drawLine(result.history.map(h => h.aCumulative), myColor);
-  drawLine(result.history.map(h => h.bCumulative), themColor);
+  const aVals = result.history.map(h => h.aCumulative);
+  const bVals = result.history.map(h => h.bCumulative);
+  drawSeries(aVals, myColor);
+  drawSeries(bVals, themColor);
+
+  // End-of-line score labels in the right gutter
+  ctx.font = '600 11px "Fraunces", Georgia, serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = myColor;
+  ctx.fillText(aVals[aVals.length - 1], cssW - padRight + 4, yAt(aVals[aVals.length - 1]));
+  ctx.fillStyle = themColor;
+  ctx.fillText(bVals[bVals.length - 1], cssW - padRight + 4, yAt(bVals[bVals.length - 1]));
+}
+
+// Convert a hex color (#rrggbb or #rgb) to an rgba string with the
+// given alpha. Used by the area-fill draw call above.
+function hexWithAlpha(hex, alpha) {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.length === 3 ? c[0] + c[0] : c.slice(0, 2), 16);
+  const g = parseInt(c.length === 3 ? c[1] + c[1] : c.slice(2, 4), 16);
+  const b = parseInt(c.length === 3 ? c[2] + c[2] : c.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 // The compileable spec depends on which mode the user's editing in.
