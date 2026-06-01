@@ -201,13 +201,17 @@
 @media (max-width: 939px) {
   .wsp .actions { position: sticky; bottom: 0; margin: 20px -18px 0; padding: 14px 18px max(14px, env(safe-area-inset-bottom)); background: linear-gradient(180deg, transparent, var(--bg) 24%); z-index: 20; }
 }
-.wsp .wsp-btn { appearance: none; border: 1px solid transparent; border-radius: 999px; padding: 14px 20px; font-family: var(--sans); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; transition: transform 100ms ease, filter 150ms ease, background 150ms ease, color 150ms ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-.wsp .wsp-btn:active { transform: scale(0.97); }
-.wsp .wsp-btn:disabled { opacity: 0.4; pointer-events: none; }
-.wsp .wsp-btn-primary { background: var(--bld-color); color: #0e0d0c; }
-.wsp .wsp-btn-primary:hover { filter: brightness(1.1); }
-.wsp .wsp-btn-ghost { background: transparent; color: var(--fg-dim); border-color: var(--border); }
-.wsp .wsp-btn-ghost:hover { color: var(--fg); border-color: var(--fg-faint); }
+/* Workshop button family. Already uniquely namespaced via the wsp- prefix,
+   so no .wsp ancestor required — also lets .cend (campaign end) and .rvl
+   (reveal) use them. --bld-color falls through from whatever scope sets
+   it (defaults to --fg if none). */
+.wsp-btn { appearance: none; border: 1px solid transparent; border-radius: 999px; padding: 14px 20px; font-family: var(--sans); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; transition: transform 100ms ease, filter 150ms ease, background 150ms ease, color 150ms ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
+.wsp-btn:active { transform: scale(0.97); }
+.wsp-btn:disabled { opacity: 0.4; pointer-events: none; }
+.wsp-btn-primary { background: var(--bld-color, var(--fg)); color: #0e0d0c; }
+.wsp-btn-primary:hover { filter: brightness(1.1); }
+.wsp-btn-ghost { background: transparent; color: var(--fg-dim); border-color: var(--border); }
+.wsp-btn-ghost:hover { color: var(--fg); border-color: var(--fg-faint); }
 
 /* ── Toast ─────────────────────────────────────────────────────────────── */
 .wsp-toast { position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 12px); background: var(--surface); border: 1px solid var(--bld-color); color: var(--fg); font-size: 0.85rem; padding: 11px 18px; border-radius: 999px; opacity: 0; pointer-events: none; transition: opacity 220ms ease, transform 220ms ease; z-index: 50; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
