@@ -122,6 +122,21 @@ export function getSavedProgress() {
   return load();
 }
 
+// ── Preferences (sound, reduced motion) ──────────────────────────────────────
+
+const DEFAULT_PREFS = () => ({ reducedMotion: false, soundEnabled: true });
+
+export function getPreferences() {
+  return { ...DEFAULT_PREFS(), ...(load()?.preferences ?? {}) };
+}
+
+export function setPreference(key, value) {
+  const state = load() || EMPTY_STATE();
+  state.preferences = { ...DEFAULT_PREFS(), ...(state.preferences || {}) };
+  state.preferences[key] = value;
+  save(state);
+}
+
 // ── User-built strategies (Phase 2) ──────────────────────────────────────────
 
 export function getUserStrategies() {

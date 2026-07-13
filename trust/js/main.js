@@ -1,5 +1,5 @@
 import { CHARACTERS } from './characters.js';
-import { buildSilhouette } from './silhouette.js';
+import { createFace } from './face.js';
 import { initColdOpen, initDilemma } from './views/intro.js';
 import { initMatchView, startMatch } from './views/match-view.js';
 import { initSummaryView, showSummary } from './views/summary-view.js';
@@ -8,14 +8,16 @@ import { initEvolutionView, showEvolution } from './views/evolution-view.js';
 import { initBuilderView, showBuilder } from './views/builder-view.js';
 import { initLabView, showLab } from './views/lab-view.js';
 import { initReplicatorView, showReplicator } from './views/replicator-view.js';
-import { getSavedProgress, clearProgress, markCampaignDone } from './progress.js';
+import { getSavedProgress, clearProgress, markCampaignDone, getPreferences } from './progress.js';
 import { decodeStrategy } from '../../core/strategy.js';
+import * as audio from './audio.js';
+import { initMapView, showMap } from './views/map-view.js';
 import { initDevMenu } from './dev-menu.js'; // DEV ONLY
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
 const VIEWS = [
-  'cold-open', 'dilemma', 'intro-card', 'match',
+  'cold-open', 'dilemma', 'intro-card', 'match', 'map',
   'summary', 'campaign-end', 'reveal', 'evolution', 'builder', 'lab', 'replicator',
 ];
 
@@ -44,6 +46,10 @@ export function navigate(viewName, params = {}) {
     showReveal();
   }
 
+  if (viewName === 'map') {
+    showMap(params);
+  }
+
   if (viewName === 'evolution') {
     showEvolution();
   }
@@ -68,11 +74,38 @@ function renderIntroCard(charIndex) {
   const el   = document.getElementById('view-intro-card');
 
   el.style.setProperty('--char-color', char.color);
-  el.querySelector('.char-silhouette-wrap').innerHTML = buildSilhouette(char.id, char.color);
+  const faceWrap = el.querySelector('.char-silhouette-wrap');
+  faceWrap.innerHTML = '';
+  const face = createFace(char.color, { size: 132 });
+  faceWrap.appendChild(face.el);
+  face.startIdle();
   el.querySelector('.char-name').textContent          = char.name;
   el.querySelector('.char-name').style.color          = char.color;
   el.querySelector('.char-intro-text').textContent    = char.intro;
   el.querySelector('[data-action="begin-match"]').onclick = () => startMatch(charIndex);
+}
+
+// ── Sound toggle ──────────────────────────────────────────────────────────────
+
+function mountSoundToggle() {
+  if (document.getElementById('tg-sound')) return;
+  const btn = document.createElement('button');
+  btn.id = 'tg-sound';
+  btn.className = 'tg-sound';
+  const on = getPreferences().soundEnabled !== false;
+  btn.dataset.on = String(on);
+  btn.setAttribute('aria-label', on ? 'Mute sound' : 'Unmute sound');
+  btn.innerHTML = `
+    <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 6a9 9 0 0 1 0 12"/></svg>
+    <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+  `;
+  btn.addEventListener('click', () => {
+    const nowOn = audio.toggle();
+    btn.dataset.on = String(nowOn);
+    btn.setAttribute('aria-label', nowOn ? 'Mute sound' : 'Unmute sound');
+    if (nowOn) audio.play('click');
+  });
+  document.body.appendChild(btn);
 }
 
 // ── Boot & resume ─────────────────────────────────────────────────────────────
@@ -87,6 +120,13 @@ function boot() {
   initBuilderView(navigate);
   initLabView(navigate);
   initReplicatorView(navigate);
+  initMapView(navigate);
+
+  // Audio wakes up on the first user gesture (browsers block autoplay). The
+  // ambient pad and stings only start once the player has interacted.
+  window.addEventListener('pointerdown', () => audio.arm(), { once: true });
+  mountSoundToggle();
+
   // DEV ONLY — page-jump menu. Shown on localhost, or anywhere with ?dev in
   // the URL. Never appears on the deployed site unless explicitly opted in.
   const DEV = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
