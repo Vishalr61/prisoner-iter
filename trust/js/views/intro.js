@@ -1,130 +1,138 @@
-// Cold open and dilemma screens — opening-sequence overhaul.
-// Each view now builds its own DOM (matching the builder/evolution pattern),
-// so the redesign is self-contained. Same public contract: initColdOpen(go)
-// and initDilemma(go), both called once at boot; views are shown via the
-// router toggling `.active`.
+// Cold open + dilemma — show-don't-tell overhaul.
+//
+// The opening no longer explains the dilemma in prose. It shows two faces,
+// drops the player into one anonymous round where a stranger takes what you
+// offered, and lets the coins do the teaching. Then one line, and into the
+// campaign map. Same public contract: initColdOpen(go) + initDilemma(go).
 
-const PAYOFFS = { R: 3, T: 5, P: 1, S: 0 };
+import { createFace } from '../face.js';
+import * as audio from '../audio.js';
+import { isReduced } from '../juice.js';
+
+const PAY = { R: 3, T: 5, P: 1, S: 0 };
 
 export function initColdOpen(go) {
   const el = document.getElementById('view-cold-open');
   el.innerHTML = `
     <div class="co">
       <div class="co-kicker"><span class="dot"></span>The Trust Game</div>
-      <div class="co-lines" aria-live="polite">
-        <span class="line">You and a stranger.</span>
-        <span class="line">One choice.</span>
-        <span class="line">Trust them, or <em>take what you can</em>.</span>
+      <div class="co-faces">
+        <span class="co-face" data-you></span>
+        <span class="co-vs">&middot;</span>
+        <span class="co-face" data-them></span>
       </div>
-      <div class="co-tap">tap anywhere to continue</div>
-      <button class="co-hit" data-action="continue" aria-label="Continue"></button>
+      <div class="co-lines">
+        <span class="line">You, and a stranger.</span>
+        <span class="line">Trust them &mdash; or <em>take what you can</em>.</span>
+      </div>
+      <div class="co-tap">tap to begin</div>
+      <button class="co-hit" data-action="continue" aria-label="Begin"></button>
     </div>
   `;
-  el.querySelector('[data-action="continue"]').addEventListener('click', () => go('dilemma'));
+  const you  = createFace('#6fae8f', { size: 62 });
+  const them = createFace('#8a8078', { size: 62 });
+  el.querySelector('[data-you]').appendChild(you.el);
+  el.querySelector('[data-them]').appendChild(them.el);
+  if (!isReduced()) { you.startIdle(); them.startIdle(); }
+  them.set('wary');
+  el.querySelector('[data-action="continue"]').addEventListener('click', () => { audio.arm(); go('dilemma'); });
 }
 
 export function initDilemma(go) {
   const el = document.getElementById('view-dilemma');
   el.innerHTML = `
     <div class="dlm">
-      <div class="dlm-kicker"><span class="dot"></span>The Setup · One round</div>
+      <div class="dlm-kicker"><span class="dot"></span>One round &middot; a stranger</div>
 
-      <div class="dlm-intro" data-intro>
-        <p class="dlm-prose">
-          <span class="pause">You can share, or you can take.</span>
-          <span class="pause">They can share, or they can take.</span>
-          <span class="pause dim">Neither of you sees the other's choice.</span>
-        </p>
-
-        <div class="dlm-matrix-wrap">
-          <span class="dlm-matrix-label">Points · you / them</span>
-          <div class="dlm-matrix">
-            <div class="dlm-cell dlm-corner"></div>
-            <div class="dlm-cell"><span class="dlm-col-head">They<br>share</span></div>
-            <div class="dlm-cell"><span class="dlm-col-head">They<br>take</span></div>
-
-            <div class="dlm-cell"><span class="dlm-row-head">You<br>share</span></div>
-            <div class="dlm-cell coop"><span class="dlm-payoff"><span class="mine">3</span><span class="sep">/</span><span class="theirs">3</span></span><span class="dlm-cell-note">Trust</span></div>
-            <div class="dlm-cell"><span class="dlm-payoff"><span class="mine">0</span><span class="sep">/</span><span class="theirs">5</span></span><span class="dlm-cell-note">Played</span></div>
-
-            <div class="dlm-cell"><span class="dlm-row-head">You<br>take</span></div>
-            <div class="dlm-cell tempt"><span class="dlm-payoff"><span class="mine">5</span><span class="sep">/</span><span class="theirs">0</span></span><span class="dlm-cell-note">Tempt</span></div>
-            <div class="dlm-cell both-take"><span class="dlm-payoff"><span class="mine">1</span><span class="sep">/</span><span class="theirs">1</span></span><span class="dlm-cell-note">Stalemate</span></div>
-          </div>
-        </div>
-
-        <p class="dlm-question">What do you do?</p>
-
+      <div class="dlm-round" data-round>
+        <div class="dlm-stranger" data-face></div>
+        <p class="dlm-prompt">They choose at the same time &mdash; and you can&rsquo;t see it.<br><span class="q">Share, or take?</span></p>
         <div class="dlm-choices">
           <button class="dlm-choice share" data-action="share"><span class="verb">Share</span><span class="sub">cooperate</span></button>
           <button class="dlm-choice take"  data-action="take"><span class="verb">Take</span><span class="sub">defect</span></button>
         </div>
       </div>
 
-      <div class="dlm-reveal" data-reveal>
-        <div class="dlm-versus">
-          <div class="dlm-vside" data-your><span class="dlm-vlabel">You</span><span class="dlm-token" data-your-token></span></div>
-          <span class="dlm-vs-mark">vs</span>
-          <div class="dlm-vside" data-their><span class="dlm-vlabel">Stranger</span><span class="dlm-token take">Took</span></div>
+      <div class="dlm-result" data-result>
+        <div class="dlm-stranger" data-face2></div>
+        <div class="coins">
+          <div class="coins-row">
+            <div class="coins-side you"><span class="coins-who">You</span><div class="coins-tray you" data-tray="you"></div></div>
+            <div class="coins-mid"><span class="coin-move" data-move="you"></span><span class="m2-vs">vs</span><span class="coin-move" data-move="them"></span></div>
+            <div class="coins-side them"><span class="coins-who">Stranger</span><div class="coins-tray them" data-tray="them"></div></div>
+          </div>
         </div>
-        <p class="dlm-payoff-line" data-payoff></p>
-        <div class="dlm-after" data-after>
-          <p class="dlm-after-text">
-            That's the dilemma.
-            <span class="pause">Now imagine playing it ten times. With the same person.</span>
-            <span class="pause em">Or a hundred.</span>
-          </p>
-        </div>
-        <button class="dlm-continue" data-action="continue">Meet your first opponent →</button>
+        <p class="dlm-line" data-line></p>
+        <p class="dlm-subline" data-subline></p>
+        <button class="dlm-continue2" data-action="continue" hidden>Now meet people you know &rarr;</button>
       </div>
     </div>
   `;
 
-  const intro      = el.querySelector('[data-intro]');
-  const reveal     = el.querySelector('[data-reveal]');
-  const btnShare   = el.querySelector('[data-action="share"]');
-  const btnTake    = el.querySelector('[data-action="take"]');
-  const yourSide   = el.querySelector('[data-your]');
-  const theirSide  = el.querySelector('[data-their]');
-  const yourToken  = el.querySelector('[data-your-token]');
-  const payoffEl   = el.querySelector('[data-payoff]');
-  const afterEl    = el.querySelector('[data-after]');
-  const btnContinue = el.querySelector('[data-action="continue"]');
-  let played = false;
+  const face = createFace('#8a8078', { size: 92 });
+  el.querySelector('[data-face]').appendChild(face.el);
+  if (!isReduced()) face.startIdle();
 
-  function play(humanMove) {
+  let played = false;
+  const round  = el.querySelector('[data-round]');
+  const result = el.querySelector('[data-result]');
+
+  function play(move) {
     if (played) return;
     played = true;
-    btnShare.disabled = true;
-    btnTake.disabled = true;
+    audio.arm();
+    audio.play('choose');
+    el.querySelectorAll('.dlm-choice').forEach(b => b.disabled = true);
 
-    // Fade the intro out, then swap to the reveal.
-    intro.classList.add('fading');
+    const shared = move === 'C';
+    const myPay    = shared ? PAY.S : PAY.P;   // stranger always takes
+    const theirPay = shared ? PAY.T : PAY.P;
+
+    round.classList.add('fading');
     setTimeout(() => {
-      intro.style.display = 'none';
-      reveal.classList.add('on');
+      round.style.display = 'none';
+      result.classList.add('on');
 
-      const shared = humanMove === 'C';
-      const myPay = shared ? PAYOFFS.S : PAYOFFS.P;       // stranger always takes
-      const theirPay = shared ? PAYOFFS.T : PAYOFFS.P;
+      // Move the stranger's face into the result so their reaction is seen.
+      el.querySelector('[data-face2]').appendChild(face.el);
+      face.set(shared ? 'cold' : 'wary');
 
-      yourToken.textContent = shared ? 'Shared' : 'Took';
-      yourToken.className = `dlm-token ${shared ? 'share' : 'take'}`;
-      payoffEl.innerHTML = shared
-        ? `You got <span class="num bad">${myPay}</span>. They got <span class="num good">${theirPay}</span>.`
-        : `You each got <span class="num meh">${myPay}</span>.`;
+      setMove('you', move);
+      setMove('them', 'D');
+      dropCoins('you', myPay);
+      dropCoins('them', theirPay);
+      audio.play(shared ? 'betrayed' : 'mutualTake');
 
-      setTimeout(() => yourSide.classList.add('shown'), 50);
-      setTimeout(() => theirSide.classList.add('shown'), 450);
-      setTimeout(() => {
-        payoffEl.classList.add('shown');
-        afterEl.classList.add('shown');
-        setTimeout(() => { btnContinue.style.display = 'inline-flex'; }, 600);
-      }, 850);
-    }, 220);
+      const line = el.querySelector('[data-line]');
+      const sub  = el.querySelector('[data-subline]');
+      line.innerHTML = shared
+        ? 'You trusted. They took &mdash; because in a single round, taking always wins.'
+        : 'You both took. Nobody really won.';
+      const cont = el.querySelector('[data-action="continue"]');
+      setTimeout(() => line.classList.add('shown'), 500);
+      setTimeout(() => { sub.textContent = 'But you’ll play the same people again and again. That changes everything.'; sub.classList.add('shown'); }, 1100);
+      setTimeout(() => { cont.hidden = false; cont.classList.add('shown'); }, 1800);
+    }, 240);
   }
 
-  btnShare.addEventListener('click', () => play('C'));
-  btnTake.addEventListener('click', () => play('D'));
-  btnContinue.addEventListener('click', () => go('intro-card', { characterIndex: 0 }));
+  function setMove(who, move) {
+    const chip = el.querySelector(`[data-move="${who}"]`);
+    chip.textContent = move === 'C' ? 'Shared' : 'Took';
+    chip.className = `coin-move ${move === 'C' ? 'share' : 'take'} shown`;
+  }
+
+  function dropCoins(who, n) {
+    const tray = el.querySelector(`[data-tray="${who}"]`);
+    tray.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('span');
+      c.className = 'coin';
+      tray.appendChild(c);
+      setTimeout(() => { c.classList.add('drop'); if (i < 3) audio.play('coin'); }, 260 + i * (isReduced() ? 0 : 90));
+    }
+  }
+
+  el.querySelector('[data-action="share"]').addEventListener('click', () => play('C'));
+  el.querySelector('[data-action="take"]').addEventListener('click', () => play('D'));
+  el.querySelector('[data-action="continue"]').addEventListener('click', () => go('map'));
 }

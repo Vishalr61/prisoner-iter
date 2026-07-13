@@ -65,7 +65,17 @@ Round-robin tournament between selectable strategies. `tournament/js/tournament.
 
 ### Trust Game — Narrative Campaign (`trust/`)
 
-Linear campaign where the player plays IPD against 6 characters, each a disguised strategy. View flow: `cold-open → dilemma → intro-card → match → summary → campaign-end → reveal → evolution`.
+Linear campaign where the player plays IPD against 6 characters, each a disguised strategy. View flow: `cold-open → dilemma → map → intro-card → match → summary → map → … → campaign-end → reveal → evolution`. The campaign **map** (`js/views/map-view.js`, `map.css`) sits between characters and shows the journey — completed people as faces in their final emotion, the next as a pulsing portrait, the rest as mystery `?` nodes (the strategy reveal is saved for the reveal screen).
+
+**Entertainment layer** (shared across views):
+- `js/audio.js` — procedural Web Audio. An adaptive ambient pad bends major→minor as betrayal accumulates; per-outcome stings. Gesture-gated (`arm()` on first pointerdown), honors `preferences.soundEnabled` (persisted via `progress.js` `getPreferences`/`setPreference`), toggled by the fixed `#tg-sound` button mounted in `main.js`.
+- `js/face.js` — `createFace(color, {size})` builds an expressive SVG face (`warm`/`hurt`/`cold`/`wary`/`bright`/`thinking`), idle breathing + blink, and `revealTrueForm(innerSvg)` to morph into the abstract silhouette. Reused on the intro card, match, map, summary, and reveal. The silhouette glyph comes from `silhouetteShape(id, color)` in `js/silhouette.js`.
+- `js/juice.js` — screen effects (`flash`/`shake`/`burst`/`pulse`), all gated behind `prefers-reduced-motion` in one place.
+- `game.css` — the shared visual system: face, trust meter, coin payoff, prediction, juice, sound toggle.
+
+The **match** (`js/views/match-view.js`) drives all of it: the opponent face reacts each round, coins drop per payoff, a trust meter fills/drains/shatters (Grim), a "call it" prediction runs from round 3, plus screen juice + audio. The engine contract (`createMatch`/`step`/`getHistory` in `trust/js/match.js`) is untouched.
+
+Router note: `navigate(viewName)` already toggles `.active` and calls the view's `show*()`, so a `show*()` must not call `navigate(sameView)` again (it recurses). Views that re-enter (`showSummary`) guard on a required param; `showMap` simply doesn't re-navigate.
 
 **Routing:** `main.js` owns the `navigate(viewName, params)` function. Views are shown/hidden by toggling the `active` CSS class on `#view-*` elements.
 

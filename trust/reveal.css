@@ -46,6 +46,22 @@
 .rvl-strategy { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--row-color); }
 .rvl-explain { font-family: var(--serif); font-size: 1.02rem; line-height: 1.55; color: var(--fg-dim); text-wrap: pretty; }
 
+/* ── Unmasking cards ───────────────────────────────────────────────────── */
+.rvl-unmask { display: flex; flex-direction: column; gap: 4px; }
+.rvl-card {
+  display: grid; grid-template-columns: 72px 1fr; gap: 18px; align-items: center;
+  padding: 18px 0; border-bottom: 1px solid var(--rule);
+}
+.rvl-card:first-child { padding-top: 0; }
+.rvl-card:last-child { border-bottom: none; }
+.rvl-card-face { width: 68px; height: 68px; }
+.rvl-card-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rvl-card-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rvl-card-name { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; color: var(--fg); line-height: 1; }
+.rvl-card-arrow { color: var(--fg-faint); font-family: var(--mono); }
+.rvl-card-strat { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--row-color); }
+.rvl-card-punch { font-family: var(--serif); font-size: 1.0rem; line-height: 1.5; color: var(--fg-dim); text-wrap: pretty; }
+
 /* ── Closing lines ─────────────────────────────────────────────────────── */
 .rvl-closing { display: flex; flex-direction: column; gap: 8px; }
 .rvl-line { font-family: var(--serif); font-size: clamp(1.1rem, 2.8vw, 1.35rem); line-height: 1.45; color: var(--fg); text-wrap: pretty; }
@@ -77,18 +93,18 @@
 .rvl-actions .wsp-btn { flex: 1; min-width: 180px; }
 
 /* ── Choreography (staggered reveal) ───────────────────────────────────── */
-.rvl-head, .rvl-row, .rvl-line, .rvl-matrix-block, .rvl-bridge {
+.rvl-head, .rvl-card, .rvl-line, .rvl-matrix-block, .rvl-bridge {
   opacity: 0; transform: translateY(12px);
   transition: opacity 0.55s ease, transform 0.55s ease;
 }
-.rvl-head.shown, .rvl-row.shown, .rvl-line.shown, .rvl-matrix-block.shown, .rvl-bridge.shown { opacity: 1; transform: none; }
+.rvl-head.shown, .rvl-card.shown, .rvl-line.shown, .rvl-matrix-block.shown, .rvl-bridge.shown { opacity: 1; transform: none; }
 
 /* Skip-on-repeat: fast fade-in for everything at once. */
-#view-reveal.instant .rvl-head, #view-reveal.instant .rvl-row, #view-reveal.instant .rvl-line,
+#view-reveal.instant .rvl-head, #view-reveal.instant .rvl-card, #view-reveal.instant .rvl-line,
 #view-reveal.instant .rvl-matrix-block, #view-reveal.instant .rvl-bridge {
   opacity: 1; transform: none; transition: opacity 0.3s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rvl-head, .rvl-row, .rvl-line, .rvl-matrix-block, .rvl-bridge { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .rvl-head, .rvl-card, .rvl-line, .rvl-matrix-block, .rvl-bridge { opacity: 1 !important; transform: none !important; transition: none !important; }
 }

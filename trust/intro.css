@@ -168,6 +168,48 @@
 @keyframes co-rise  { to { opacity: 1; transform: translateY(0); } }
 @keyframes co-pulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.85; } }
 
+/* ── Cold-open faces (overhaul) ────────────────────────────────────────── */
+.co-faces {
+  display: flex; align-items: center; justify-content: center; gap: 22px;
+  margin-bottom: clamp(22px, 5vh, 44px);
+  opacity: 0; animation: co-rise 0.9s cubic-bezier(0.2,0.8,0.3,1) 0.2s forwards;
+}
+.co-face { width: 62px; height: 62px; display: block; }
+.co-vs { font-family: var(--serif); font-size: 1.4rem; color: var(--fg-faint); }
+.co-lines .line em { font-style: italic; color: var(--fg); }
+.co-lines .line:last-child { color: var(--fg); }
+
+/* ── Dilemma: interactive round (overhaul) ─────────────────────────────── */
+.dlm-round { display: flex; flex-direction: column; align-items: center; gap: clamp(22px, 5vh, 40px); transition: opacity 0.3s ease, transform 0.3s ease; }
+.dlm-round.fading { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+.dlm-stranger { width: 92px; height: 92px; }
+.dlm-prompt { font-family: var(--serif); font-size: clamp(1.15rem, 4.4vw, 1.5rem); line-height: 1.4; color: var(--fg-dim); text-align: center; text-wrap: pretty; }
+.dlm-prompt .q { color: var(--fg); font-style: italic; }
+.dlm-round .dlm-choices { width: 100%; max-width: 360px; }
+
+.dlm-result { display: none; flex-direction: column; align-items: center; gap: clamp(18px, 4vh, 32px); }
+.dlm-result.on { display: flex; }
+.dlm-result .dlm-stranger { width: 88px; height: 88px; }
+.dlm-result .coins { max-width: 360px; }
+.dlm-line { font-family: var(--serif); font-size: clamp(1.15rem, 4.2vw, 1.45rem); line-height: 1.45; color: var(--fg); text-align: center; text-wrap: pretty; max-width: 34ch; opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.dlm-line.shown { opacity: 1; transform: none; }
+.dlm-subline { font-family: var(--serif); font-style: italic; font-size: clamp(1rem, 3.6vw, 1.18rem); line-height: 1.5; color: var(--fg-dim); text-align: center; text-wrap: pretty; max-width: 34ch; opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.dlm-subline.shown { opacity: 1; transform: none; }
+.dlm-continue2 {
+  align-self: center; appearance: none; border: none; border-radius: 999px;
+  background: var(--fg); color: #0e0d0c; padding: 14px 28px; cursor: pointer;
+  font-family: var(--sans); font-size: 0.98rem; font-weight: 600;
+  opacity: 0; transform: translateY(8px); transition: opacity 0.4s ease, transform 0.4s ease, filter 160ms ease;
+}
+.dlm-continue2.shown { opacity: 1; transform: none; }
+.dlm-continue2:hover { filter: brightness(1.08); }
+.dlm-continue2:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .co-faces { animation: none !important; opacity: 1 !important; }
+  .dlm-line, .dlm-subline, .dlm-continue2 { transition: opacity 0.2s ease !important; transform: none !important; }
+}
+
 /* ── Character intro card ──────────────────────────────────────────────────
    main.js renderIntroCard() writes into .char-silhouette-wrap / .char-name /
    .char-intro-text and sets --char-color on #view-intro-card. Those hooks are

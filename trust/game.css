@@ -146,6 +146,7 @@
   opacity: 0; transform: scale(0.9); transition: opacity 0.25s ease, transform 0.25s ease;
 }
 .coin-move.shown { opacity: 1; transform: none; }
+.coin-move:empty { opacity: 0; border-color: transparent; background: transparent; }
 .coin-move.share { color: var(--share); border-color: color-mix(in oklab, var(--share) 55%, transparent); background: color-mix(in oklab, var(--share) 12%, transparent); }
 .coin-move.take  { color: var(--take);  border-color: var(--take); }
 

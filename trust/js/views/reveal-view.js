@@ -1,21 +1,29 @@
-// Reveal view — "what they really were" overhaul.
-// Editorial restage of the cast reveal: kicker + title, a cast list pairing each
-// character with their classical strategy, closing lines, the payoff matrix, and
-// the bridge to the tournament. Same contract: initRevealView(go) + showReveal().
-// Preserves the skip-on-repeat ("instant") behavior via localStorage.
+// Reveal view — the unmasking.
+//
+// Instead of six paragraphs, each person's face is shown and then morphs into
+// its abstract "true form" as the classical strategy name and a one-line punch
+// land. The closing lines, payoff matrix, and bridge to the tournament are
+// kept. Same contract: initRevealView(go) + showReveal(). Preserves the
+// skip-on-repeat ("instant") behavior via localStorage.
 
 import { CHARACTERS } from '../characters.js';
+import { createFace } from '../face.js';
+import { silhouetteShape } from '../silhouette.js';
+import * as audio from '../audio.js';
 
-const T = {
-  headerPause:  600,
-  charInterval: 350,
-  afterCast:    800,
-  closingGap:   600,
-  closing2Gap:  400,
-  gridGap:      600,
+// Short presentation punches (the canonical explanations live in characters.js
+// / copy.md; these are the tight one-liners for the unmasking).
+const PUNCH = {
+  sam:    'Shared every round, no matter what. The most generous rule — and the easiest to exploit.',
+  marcus: 'Took every round. It can’t be betrayed, but it can’t build anything either.',
+  maya:   'Did whatever you did last. Cooperate first, then mirror. Simple, fair, hard to beat.',
+  theo:   'Warm until your first betrayal — then the door never reopened.',
+  naomi:  'Forgave one slip, sometimes two. Slower to anger, harder to lose.',
+  ren:    'Kept what worked, dropped what didn’t. Watching outcomes, not you.',
 };
 
 const SEEN_KEY = 'tg_reveal_seen';
+const faces = [];
 
 let go = null;
 export function initRevealView(navigateFn) { go = navigateFn; }
@@ -24,12 +32,14 @@ export function showReveal() {
   const el = document.getElementById('view-reveal');
   const already = hadSeenReveal();
 
-  buildRevealDOM(el);
+  buildDOM(el);
+  mountFaces(el);
 
   if (already) {
+    faces.forEach(f => f.revealTrueForm(f.glyph));
     el.classList.remove('instant');
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('instant')));
-    setTimeout(() => el.classList.add('instant'), 60); // fallback if rAF is throttled
+    setTimeout(() => el.classList.add('instant'), 60);
   } else {
     el.classList.remove('instant');
     runChoreography(el);
@@ -37,25 +47,26 @@ export function showReveal() {
   }
 }
 
-function buildRevealDOM(el) {
+function buildDOM(el) {
   el.innerHTML = `
     <div class="rvl">
       <header class="rvl-head">
         <div class="rvl-kicker"><span class="dot"></span>The Reveal</div>
-        <h1 class="rvl-title">Six strategies, <em>in disguise</em>.</h1>
-        <p class="rvl-deck">Every person you met was playing a classical rule of the iterated prisoner's dilemma. Here's who they really were.</p>
+        <h1 class="rvl-title">Six people, <em>six strategies</em>.</h1>
+        <p class="rvl-deck">No one you met was improvising. Each was playing a classical rule of the iterated prisoner's dilemma. Here's who they really were.</p>
       </header>
 
-      <div class="rvl-cast">
-        ${CHARACTERS.map(char => `
-          <div class="rvl-row" style="--row-color:${char.color}">
-            <span class="rvl-pip" style="background:${char.color}"></span>
-            <div class="rvl-row-body">
-              <div class="rvl-row-head">
-                <span class="rvl-name">${char.name}</span>
-                <span class="rvl-strategy">${char.revealName}</span>
+      <div class="rvl-unmask">
+        ${CHARACTERS.map((c, i) => `
+          <div class="rvl-card" style="--row-color:${c.color}">
+            <div class="rvl-card-face" data-face="${i}"></div>
+            <div class="rvl-card-body">
+              <div class="rvl-card-head">
+                <span class="rvl-card-name">${c.name}</span>
+                <span class="rvl-card-arrow" aria-hidden="true">→</span>
+                <span class="rvl-card-strat">${c.revealName}</span>
               </div>
-              <p class="rvl-explain">${char.revealExplanation}</p>
+              <p class="rvl-card-punch">${PUNCH[c.id] || ''}</p>
             </div>
           </div>`).join('')}
       </div>
@@ -71,11 +82,9 @@ function buildRevealDOM(el) {
           <div class="rvl-cell rvl-corner"></div>
           <div class="rvl-cell"><span class="rvl-col-head">They<br>share</span></div>
           <div class="rvl-cell"><span class="rvl-col-head">They<br>take</span></div>
-
           <div class="rvl-cell"><span class="rvl-row-label">You<br>share</span></div>
           <div class="rvl-cell coop"><span class="rvl-pay"><span class="mine">3</span><span class="sep">/</span><span class="theirs">3</span></span><span class="rvl-cell-note">Mutual gain</span></div>
           <div class="rvl-cell"><span class="rvl-pay"><span class="mine">0</span><span class="sep">/</span><span class="theirs">5</span></span><span class="rvl-cell-note">They exploit</span></div>
-
           <div class="rvl-cell"><span class="rvl-row-label">You<br>take</span></div>
           <div class="rvl-cell tempt"><span class="rvl-pay"><span class="mine">5</span><span class="sep">/</span><span class="theirs">0</span></span><span class="rvl-cell-note">You exploit</span></div>
           <div class="rvl-cell both-take"><span class="rvl-pay"><span class="mine">1</span><span class="sep">/</span><span class="theirs">1</span></span><span class="rvl-cell-note">Mutual loss</span></div>
@@ -98,20 +107,34 @@ function buildRevealDOM(el) {
   });
 }
 
+function mountFaces(el) {
+  faces.length = 0;
+  CHARACTERS.forEach((c, i) => {
+    const slot = el.querySelector(`[data-face="${i}"]`);
+    if (!slot) return;
+    const face = createFace(c.color, { size: 68 });
+    face.glyph = silhouetteShape(c.id, c.color);
+    slot.appendChild(face.el);
+    faces.push(face);
+  });
+}
+
 function runChoreography(el) {
-  let delay = 100;
+  let delay = 120;
   show(el.querySelector('.rvl-head'), delay);
-  delay += T.headerPause;
+  delay += 700;
 
-  el.querySelectorAll('.rvl-row').forEach(row => { show(row, delay); delay += T.charInterval; });
-  delay += T.afterCast;
+  el.querySelectorAll('.rvl-card').forEach((card, i) => {
+    show(card, delay);
+    setTimeout(() => { faces[i]?.revealTrueForm(faces[i].glyph); audio.play('reveal'); }, delay + 520);
+    delay += 900;
+  });
+  delay += 300;
 
-  el.querySelectorAll('.rvl-line').forEach(line => { show(line, delay); delay += T.closingGap; });
-  delay += T.closing2Gap;
-
+  el.querySelectorAll('.rvl-line').forEach(line => { show(line, delay); delay += 600; });
+  delay += 200;
   show(el.querySelector('.rvl-matrix-block'), delay);
-  delay += T.gridGap;
-
+  delay += 600;
   show(el.querySelector('.rvl-bridge'), delay);
 }
 

@@ -18,6 +18,13 @@ const SHAPES = {
   ren: `<polygon points="50,14 72,28 82,54 66,76 34,76 18,54 28,28" />`,
 };
 
+// Just the inner shape markup (a <g>), sized to the 0–100 viewBox — used to
+// morph a face into its "true form" glyph (face.js revealTrueForm).
+export function silhouetteShape(charId, color) {
+  const shape = SHAPES[charId] ?? SHAPES.sam;
+  return `<g fill="${color}" opacity="0.92">${shape}</g>`;
+}
+
 export function buildSilhouette(charId, color, size = 100) {
   const shape = SHAPES[charId] ?? SHAPES.sam;
   return `<svg xmlns="http://www.w3.org/2000/svg"

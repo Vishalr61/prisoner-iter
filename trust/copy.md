@@ -2,25 +2,34 @@
 
 ## Intro Screens
 
+The opening is now show-don't-tell: two faces, then one interactive anonymous
+round where the stranger takes what you offered. The coins carry the lesson.
+
 ### Cold Open (screen 1)
-You and a stranger.
-One choice.
-Trust them, or take what you can.
+[Two faces: you, and a stranger.]
+You, and a stranger.
+Trust them — or take what you can.
 
-### Dilemma Screen (screen 2)
-You can share, or you can take.
-They can share, or they can take.
-Neither of you can see the other's choice.
+CTA: tap to begin
 
-What do you do?
+### Dilemma — one interactive round (screen 2)
+Kicker: One round · a stranger
+Prompt: They choose at the same time — and you can't see it.
+        Share, or take?
 
-### After Reveal (screen 3)
-That's the dilemma.
+After the player chooses, the stranger always takes. Coins drop (0 to you,
+5 to them, if you shared). Then:
 
-Now imagine playing it ten times. With the same person.
-Or a hundred.
+If you shared:
+You trusted. They took — because in a single round, taking always wins.
 
-CTA: Meet your first opponent →
+If you took:
+You both took. Nobody really won.
+
+Subline (both cases):
+But you'll play the same people again and again. That changes everything.
+
+CTA: Now meet people you know →  (leads into the campaign map)
 
 ---
 
@@ -118,7 +127,25 @@ Whatever worked, they kept. Whatever didn't, they dropped.
 
 ## Reveal Screen
 
-### Intro line
+The reveal is now a cinematic unmasking: each person's face morphs into its
+abstract "true form" as the strategy name and a one-line punch land. The tight
+punches below are what the screen shows; the longer explanations that follow
+remain the canonical text.
+
+### Title / deck
+Six people, six strategies.
+No one you met was improvising. Each was playing a classical rule of the
+iterated prisoner's dilemma. Here's who they really were.
+
+### Unmasking punches (one line each)
+- Sam — Always Cooperate: Shared every round, no matter what. The most generous rule — and the easiest to exploit.
+- Marcus — Always Defect: Took every round. It can't be betrayed, but it can't build anything either.
+- Maya — Tit-for-Tat: Did whatever you did last. Cooperate first, then mirror. Simple, fair, hard to beat.
+- Theo — Grim Trigger: Warm until your first betrayal — then the door never reopened.
+- Naomi — Tit-for-Two-Tats: Forgave one slip, sometimes two. Slower to anger, harder to lose.
+- Ren — Win-Stay, Lose-Shift: Kept what worked, dropped what didn't. Watching outcomes, not you.
+
+### Intro line (legacy)
 You just met six strategies in disguise.
 
 ### Reveal explanations
