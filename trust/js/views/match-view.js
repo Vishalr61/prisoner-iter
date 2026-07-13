@@ -1,31 +1,33 @@
 // Match view — entertainment overhaul.
 //
-// Same public contract as before (initMatchView(navigate) + startMatch(idx)),
-// but the round loop now drives:
-//   • an expressive opponent face that reacts to every outcome        (face.js)
-//   • coin payoffs that physically drop into each side's tray
-//   • a trust meter that fills, drains, and shatters (Grim)
-//   • the "call it" prediction hook from round 3 on
-//   • screen juice + procedural audio
+// Two expressive faces (you + opponent) react to every outcome; coins drop per
+// payoff; a trust meter fills, drains, and shatters (Grim); the "call it"
+// prediction runs from round 3; plus coin/shard particles, haptics, a per-
+// character audio motif, and an optional timed-decision mode.
 //
 // The engine contract (createMatch/step/getHistory) is untouched.
 
 import { CHARACTERS } from '../characters.js';
 import { createMatch } from '../match.js';
-import { saveProgress, markCompleted } from '../progress.js';
+import { saveProgress, markCompleted, getPreferences } from '../progress.js';
 import { createFace } from '../face.js';
 import * as audio from '../audio.js';
-import { flash, shake, burst, pulse, isReduced } from '../juice.js';
+import { flash, shake, burst, pulse, haptic, isReduced } from '../juice.js';
 
 const CRACK_SVG = `<svg viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0,5 18,5 24,1 30,9 37,2 44,8 50,4 57,9 63,2 70,8 76,4 83,9 100,5" fill="none" stroke="var(--take)" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+const PLAYER_COLOR = '#6fae8f';
+const PLAYER_EMO = { 'mutual-share': 'warm', 'exploited': 'hurt', 'exploiter': 'bright', 'mutual-take': 'wary' };
+const TIMED_MS = 6000;
 
 let go        = null;
 let el        = null;
 let character = null;
 let charIndex = 0;
 let match     = null;
-let face      = null;
+let faceThem  = null;
+let faceYou   = null;
 let busy      = false;
+let timer     = null;
 
 // per-match state
 let trust        = 50;
@@ -44,13 +46,14 @@ export function startMatch(idx) {
   charIndex = idx;
   character = CHARACTERS[idx];
   match     = createMatch(character.strategyId, character.rounds);
-  busy = false;
+  busy = false; clearTimer();
   trust = 50; shattered = false; grimTriggered = false; shareStreak = 0;
   pendingGuess = null; reads = { correct: 0, total: 0 };
 
   el = document.getElementById('view-match');
   el.style.setProperty('--char-color', character.color);
   buildDOM();
+  audio.playMotif(character.strategyId);
   setupRound();
   go('match');
 }
@@ -61,11 +64,22 @@ function buildDOM() {
     <div class="mtch2">
       <div class="m2-track" data-progress></div>
 
-      <div class="m2-hero">
-        <div class="m2-facewrap" data-face></div>
-        <div class="m2-caption">
-          <span class="m2-name">${esc(character.name)}</span>
+      <div class="m2-duo">
+        <div class="m2-p you">
+          <div class="m2-face" data-face="you"></div>
+          <span class="m2-who">You</span>
+          <b class="m2-val" data-score="you">0</b>
+          <div class="coins-tray you" data-tray="you"></div>
+        </div>
+        <div class="m2-mid">
           <span class="m2-round">Round <b data-round>1</b> / ${character.rounds}</span>
+          <span class="m2-lead" data-lead>even</span>
+        </div>
+        <div class="m2-p them">
+          <div class="m2-face" data-face="them"></div>
+          <span class="m2-who them">${esc(character.name)}</span>
+          <b class="m2-val" data-score="them">0</b>
+          <div class="coins-tray them" data-tray="them"></div>
         </div>
       </div>
 
@@ -74,20 +88,6 @@ function buildDOM() {
         <div class="trust-track" data-trust-track>
           <div class="trust-fill" data-trust-fill></div>
           <div class="trust-crack" data-trust-crack>${CRACK_SVG}</div>
-        </div>
-      </div>
-
-      <div class="m2-board">
-        <div class="m2-side you">
-          <span class="m2-who">You</span>
-          <b class="m2-val" data-score="you">0</b>
-          <div class="coins-tray you" data-tray="you"></div>
-        </div>
-        <span class="m2-lead" data-lead>even</span>
-        <div class="m2-side them">
-          <span class="m2-who them">${esc(character.name)}</span>
-          <b class="m2-val" data-score="them">0</b>
-          <div class="coins-tray them" data-tray="them"></div>
         </div>
       </div>
 
@@ -110,17 +110,19 @@ function buildDOM() {
           <p class="predict-result" data-predict-result></p>
         </div>
         <div class="m2-choices" data-choices>
-          <button class="mtch-choice share" data-action="share"><span class="verb">Share</span><span class="sub">cooperate</span></button>
-          <button class="mtch-choice take"  data-action="take"><span class="verb">Take</span><span class="sub">defect</span></button>
+          <button class="mtch-choice share" data-action="share"><span class="verb">Share</span><span class="pay">+3 if they share · 0 if not</span></button>
+          <button class="mtch-choice take"  data-action="take"><span class="verb">Take</span><span class="pay">+5 if they share · +1 if not</span></button>
         </div>
+        <div class="m2-timerbar" data-timerbar hidden><span></span></div>
       </div>
     </div>
   `;
 
-  // Opponent face
-  face = createFace(character.color, { size: 116 });
-  el.querySelector('[data-face]').appendChild(face.el);
-  if (!isReduced()) face.startIdle();
+  faceYou  = createFace(PLAYER_COLOR, { size: 72 });
+  faceThem = createFace(character.color, { size: 72 });
+  el.querySelector('[data-face="you"]').appendChild(faceYou.el);
+  el.querySelector('[data-face="them"]').appendChild(faceThem.el);
+  if (!isReduced()) { faceYou.startIdle(); faceThem.startIdle(); }
 
   el.querySelector('[data-action="share"]').addEventListener('click', () => handleMove('C'));
   el.querySelector('[data-action="take"]').addEventListener('click', () => handleMove('D'));
@@ -134,7 +136,7 @@ function buildDOM() {
 // ── Round setup ─────────────────────────────────────────────────────────────
 function setupRound() {
   const history = match.getHistory();
-  const roundIndex = history.length;          // 0-based index of the upcoming round
+  const roundIndex = history.length;
 
   q('[data-round]').textContent = Math.min(roundIndex + 1, character.rounds);
   q('[data-tray="you"]').innerHTML = '';
@@ -146,7 +148,6 @@ function setupRound() {
   q('[data-outcome]').textContent = '';
   renderProgress(history);
 
-  // Prediction hook from round 3 onward (needs a couple of rounds of read).
   const predictEl = q('[data-predict]');
   const choicesEl = q('[data-choices]');
   pendingGuess = null;
@@ -160,6 +161,7 @@ function setupRound() {
     predictEl.hidden = true;
     choicesEl.style.display = '';
     setChoices(true);
+    startTimer();
   }
 }
 
@@ -174,30 +176,32 @@ function onGuess(move) {
   });
   q('[data-choices]').style.display = '';
   setChoices(true);
+  startTimer();
 }
 
 // ── The round ────────────────────────────────────────────────────────────────
 function handleMove(humanMove) {
   if (busy) return;
   busy = true;
+  clearTimer();
   setChoices(false);
   audio.play('choose');
 
   const result = match.step(humanMove);
-  const { botMove, myPay, theirPay, outcome } = result;
+  const { botMove, outcome } = result;
 
-  // 1 — your move chip appears immediately.
   showMove('you', humanMove);
+  faceYou.set('neutral');
 
-  // 2 — opponent "thinks", then reveals + the face reacts.
-  face.set('thinking');
+  faceThem.set('thinking');
   setTimeout(() => {
     showMove('them', botMove);
 
     const grimNow = character.strategyId === 'grim' && botMove === 'D' && !grimTriggered;
     if (grimNow) grimTriggered = true;
 
-    face.reactTo(outcome);
+    faceThem.reactTo(outcome);
+    faceYou.set(PLAYER_EMO[outcome] || 'neutral');
     resolveOutcome(result, grimNow);
   }, isReduced() ? 160 : 480);
 }
@@ -205,18 +209,15 @@ function handleMove(humanMove) {
 function resolveOutcome(result, grimNow) {
   const { humanMove, botMove, myPay, theirPay, myScore, theirScore, outcome } = result;
 
-  // Coins drop into each tray.
   dropCoins('you', myPay);
   dropCoins('them', theirPay);
 
-  // Scores + lead.
   setTimeout(() => {
     bumpScore('you', myScore);
     bumpScore('them', theirScore);
     setLead(myScore, theirScore);
   }, 260);
 
-  // Trust + sound + juice.
   shareStreak = outcome === 'mutual-share' ? shareStreak + 1 : 0;
   applyTrust(outcome, grimNow);
   updateTrust(true);
@@ -226,21 +227,20 @@ function resolveOutcome(result, grimNow) {
     audio.bumpTension(0.5);
     flash('rgba(210,75,75,0.4)');
     shake(el.querySelector('.mtch2'));
-    burst(q('[data-trust-track]'), { color: ['#d24b4b', '#8a2f2f'], count: 14 });
+    burst(q('[data-trust-track]'), { color: ['#d24b4b', '#8a2f2f'], count: 16, shape: 'shard' });
+    haptic([0, 30, 40, 30, 40, 90]);
   } else {
     audio.playOutcome(outcome);
     tensionFor(outcome);
     juiceFor(outcome);
     if (shareStreak >= 3) {
       audio.play('streak');
-      burst(face.el, { color: ['#5fb878', '#f0c674'], count: 12 });
+      burst(faceYou.el, { color: ['#5fb878', '#f0c674'], count: 12, shape: 'coin' });
     }
   }
 
-  // Prediction scoring.
   scorePrediction(botMove);
 
-  // Outcome line.
   const outcomeEl = q('[data-outcome]');
   outcomeEl.innerHTML = outcomeLine(humanMove, botMove);
   outcomeEl.className = 'm2-outcome ' + outcomeClass(outcome);
@@ -255,7 +255,7 @@ function resolveOutcome(result, grimNow) {
     match.reads = reads;
     match.trustEnd = trust;
     markCompleted(character.id, coopRate, history);
-    setTimeout(() => { face.stopIdle(); go('summary', { charIndex, match }); }, 1250);
+    setTimeout(() => { faceThem.stopIdle(); faceYou.stopIdle(); go('summary', { charIndex, match }); }, 1250);
   } else {
     setTimeout(() => { busy = false; setupRound(); }, 1400);
   }
@@ -273,15 +273,41 @@ function scorePrediction(botMove) {
   audio.play(right ? 'correct' : 'wrong');
 }
 
+// ── Timed-decision mode (optional) ──────────────────────────────────────────
+function startTimer() {
+  clearTimer();
+  if (!getPreferences().timedMode || isReduced()) return;
+  const bar = q('[data-timerbar]');
+  const fill = bar.querySelector('span');
+  bar.hidden = false;
+  fill.style.transition = 'none';
+  fill.style.width = '100%';
+  requestAnimationFrame(() => {
+    fill.style.transition = `width ${TIMED_MS}ms linear`;
+    fill.style.width = '0%';
+  });
+  timer = setTimeout(() => {
+    // Froze — hesitation reads as grabbing.
+    timer = null;
+    if (!busy) handleMove('D');
+  }, TIMED_MS);
+}
+
+function clearTimer() {
+  if (timer) { clearTimeout(timer); timer = null; }
+  const bar = el && el.querySelector('[data-timerbar]');
+  if (bar) { bar.hidden = true; }
+}
+
 // ── Trust meter ───────────────────────────────────────────────────────────────
 function applyTrust(outcome, grimNow) {
   if (grimNow) { trust = 0; shattered = true; return; }
   if (shattered) { trust = Math.max(0, trust - 4); return; }
   let d = 0;
   if      (outcome === 'mutual-share') d = 14 + Math.min(6, shareStreak * 2);
-  else if (outcome === 'exploiter')    d = -7;    // you took from a sharer
-  else if (outcome === 'exploited')    d = -13;   // they took your trust
-  else                                 d = -6;     // mutual take
+  else if (outcome === 'exploiter')    d = -7;
+  else if (outcome === 'exploited')    d = -13;
+  else                                 d = -6;
   trust = Math.max(0, Math.min(100, trust + d));
 }
 
@@ -313,9 +339,21 @@ function tensionFor(outcome) {
 
 function juiceFor(outcome) {
   const arena = el.querySelector('.mtch2');
-  if (outcome === 'mutual-share') { burst(face.el, { color: ['#5fb878', '#7fd39a'], count: 9 }); pulse(face.el); }
-  else if (outcome === 'exploited') { flash('rgba(210,75,75,0.32)'); shake(arena); }
-  else if (outcome === 'exploiter') { flash('rgba(240,198,116,0.22)'); }
+  if (outcome === 'mutual-share') {
+    burst(faceThem.el, { color: ['#5fb878', '#7fd39a'], count: 9, shape: 'coin' });
+    pulse(faceThem.el); pulse(faceYou.el);
+    haptic([0, 12, 40, 12]);
+  } else if (outcome === 'exploited') {
+    flash('rgba(210,75,75,0.32)'); shake(arena);
+    burst(faceYou.el, { color: ['#d24b4b', '#8a2f2f'], count: 8, shape: 'shard' });
+    haptic(70);
+  } else if (outcome === 'exploiter') {
+    flash('rgba(240,198,116,0.22)');
+    burst(faceYou.el, { color: ['#f0c674', '#ffe9ab'], count: 7, shape: 'coin' });
+    haptic(25);
+  } else {
+    haptic(30);
+  }
 }
 
 // ── Small render helpers ───────────────────────────────────────────────────────
@@ -335,7 +373,7 @@ function dropCoins(who, n) {
     const delay = 240 + i * (isReduced() ? 0 : 90);
     setTimeout(() => {
       c.classList.add('drop');
-      if (i < 3) audio.play('coin');
+      if (i < 3) { audio.play('coin'); haptic(5); }
     }, delay);
   }
 }

@@ -47,7 +47,9 @@ export function shake(el) {
 }
 
 // A radial burst of particles from the center of an element.
-export function burst(anchorEl, { color = '#f0c674', count = 12 } = {}) {
+// `shape` is 'dot' | 'coin' | 'shard' — coins for cooperation, shards for
+// betrayal, so the confetti carries meaning.
+export function burst(anchorEl, { color = '#f0c674', count = 12, shape = 'dot' } = {}) {
   if (reduced || !anchorEl) return;
   const rect = anchorEl.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
@@ -56,18 +58,26 @@ export function burst(anchorEl, { color = '#f0c674', count = 12 } = {}) {
   layer.className = 'tg-burst';
   for (let i = 0; i < count; i++) {
     const p = document.createElement('span');
-    p.className = 'tg-particle';
+    p.className = `tg-particle tg-particle-${shape}`;
     const ang = (Math.PI * 2 * i) / count + Math.random() * 0.6;
     const dist = 34 + Math.random() * 46;
     p.style.setProperty('--dx', `${Math.cos(ang) * dist}px`);
     p.style.setProperty('--dy', `${Math.sin(ang) * dist}px`);
+    p.style.setProperty('--rot', `${Math.random() * 360}deg`);
     p.style.left = `${cx}px`;
     p.style.top = `${cy}px`;
-    p.style.background = Array.isArray(color) ? color[i % color.length] : color;
+    if (shape !== 'coin') p.style.background = Array.isArray(color) ? color[i % color.length] : color;
     layer.appendChild(p);
   }
   document.body.appendChild(layer);
   setTimeout(() => layer.remove(), 950);
+}
+
+// Mobile haptics. `pattern` is a number or array (ms), per the Vibration API.
+// Gated behind reduced-motion, since it's a physical motion cue.
+export function haptic(pattern) {
+  if (reduced) return;
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch {}
 }
 
 // Briefly pulse an element (adds a class the CSS animates, then removes it).

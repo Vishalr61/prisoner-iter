@@ -8,7 +8,7 @@ import { initEvolutionView, showEvolution } from './views/evolution-view.js';
 import { initBuilderView, showBuilder } from './views/builder-view.js';
 import { initLabView, showLab } from './views/lab-view.js';
 import { initReplicatorView, showReplicator } from './views/replicator-view.js';
-import { getSavedProgress, clearProgress, markCampaignDone, getPreferences } from './progress.js';
+import { getSavedProgress, clearProgress, markCampaignDone, getPreferences, setPreference } from './progress.js';
 import { decodeStrategy } from '../../core/strategy.js';
 import * as audio from './audio.js';
 import { initMapView, showMap } from './views/map-view.js';
@@ -108,6 +108,27 @@ function mountSoundToggle() {
   document.body.appendChild(btn);
 }
 
+// Optional "timed decision" mode — off by default, opt-in for pressure.
+function mountTimedToggle() {
+  if (document.getElementById('tg-timed')) return;
+  const btn = document.createElement('button');
+  btn.id = 'tg-timed';
+  btn.className = 'tg-timed';
+  const on = getPreferences().timedMode === true;
+  btn.dataset.on = String(on);
+  btn.setAttribute('aria-label', on ? 'Turn off timed decisions' : 'Turn on timed decisions');
+  btn.title = 'Timed decisions';
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.2 2.2"/><path d="M9 2h6"/></svg>`;
+  btn.addEventListener('click', () => {
+    const next = !(getPreferences().timedMode === true);
+    setPreference('timedMode', next);
+    btn.dataset.on = String(next);
+    btn.setAttribute('aria-label', next ? 'Turn off timed decisions' : 'Turn on timed decisions');
+    audio.play('click');
+  });
+  document.body.appendChild(btn);
+}
+
 // ── Boot & resume ─────────────────────────────────────────────────────────────
 
 function boot() {
@@ -126,6 +147,7 @@ function boot() {
   // ambient pad and stings only start once the player has interacted.
   window.addEventListener('pointerdown', () => audio.arm(), { once: true });
   mountSoundToggle();
+  mountTimedToggle();
 
   // DEV ONLY — page-jump menu. Shown on localhost, or anywhere with ?dev in
   // the URL. Never appears on the deployed site unless explicitly opted in.

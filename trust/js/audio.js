@@ -193,6 +193,26 @@ export function play(name) {
   }
 }
 
+// Signature motif per strategy — a short phrase played when you meet a
+// character, so you start to "hear" who you're facing. Keyed by strategyId.
+const MOTIFS = {
+  allC:   { notes: [N.C4, N.E4, N.G4, N.C5], type: 'triangle' },  // open, warm
+  allD:   { notes: [N.G2, N.G2, N.C3],       type: 'sawtooth' },  // blunt, low
+  tft:    { notes: [N.C4, N.G4, N.C4],       type: 'triangle' },  // call & mirror
+  grim:   { notes: [N.E4, N.C4, N.G2],       type: 'sawtooth' },  // descending, ominous
+  tf2t:   { notes: [N.C4, N.D4, N.E4, N.G4], type: 'sine' },      // patient rise
+  pavlov: { notes: [N.C4, N.E4, N.D4, N.F4], type: 'triangle' },  // pattern-y
+};
+
+export function playMotif(strategyId) {
+  if (!enabled) return;
+  if (!armed) arm();
+  if (!ctx) return;
+  resumeIfNeeded();
+  const m = MOTIFS[strategyId] || MOTIFS.tft;
+  m.notes.forEach((f, i) => tone(f, { type: m.type, dur: 0.34, peak: 0.09, delay: i * 0.12 }));
+}
+
 // Convenience mapping from the engine's outcome labels to stings.
 export function playOutcome(outcome) {
   switch (outcome) {
