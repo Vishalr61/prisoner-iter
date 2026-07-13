@@ -1,6 +1,6 @@
-import { REGISTRY }                         from '../core/registry.js';
-import { compileStrategy }                  from '../core/strategy.js';
-import { runMatch as coreRunMatch }         from '../core/match.js';
+import { REGISTRY }                         from '../../core/registry.js';
+import { compileStrategy }                  from '../../core/strategy.js';
+import { runMatch as coreRunMatch }         from '../../core/match.js';
 
 // Fixed master seed → root tournament is reproducible across reloads.
 const MASTER_SEED = 1;

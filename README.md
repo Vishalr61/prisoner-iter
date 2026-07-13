@@ -7,10 +7,12 @@ A suite of interactive tools for exploring the Iterated Prisoner's Dilemma: a cl
 Three standalone apps, all pure ES modules, no build step.
 
 ```
-/          → Tournament simulator
-/spatial/  → Territorial arena
-/trust/    → The Trust Game (narrative campaign)
+/            → The Trust Game (narrative campaign)
+/tournament/ → Tournament simulator
+/spatial/    → Territorial arena
 ```
+
+The site root serves the Trust Game via a rewrite in `vercel.json` (the app itself lives in `trust/`).
 
 ### Run locally
 
@@ -18,11 +20,11 @@ Three standalone apps, all pure ES modules, no build step.
 npx serve .
 ```
 
-Open `http://localhost:3000`. That's it.
+Then open `http://localhost:3000/trust/`, `/tournament/`, or `/spatial/`. (The `/` → Trust Game rewrite is a Vercel-only rule, so locally you visit the folder paths directly.)
 
 ---
 
-## The Tournament Simulator (`/`)
+## The Tournament Simulator (`/tournament/`)
 
 Round-robin tournament between strategies. Pick which strategies compete, set how many rounds per match, and watch scores accumulate. Optional evolutionary mode: after each generation, strategies with higher scores spread; weaker ones shrink. Mutation adds noise to prevent convergence.
 

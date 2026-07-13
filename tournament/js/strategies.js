@@ -3,7 +3,7 @@
 // are root-specific design choices, kept here so root keeps its visual identity.
 // runTournament looks up the core spec by id — no .move on the display object.
 
-import { REGISTRY } from '../core/registry.js';
+import { REGISTRY } from '../../core/registry.js';
 
 const DISPLAY = {
   allC:   { short: 'AllC', color: '#4ade80', desc: 'Always cooperates. Naive but maximises mutual benefit — until exploited.' },

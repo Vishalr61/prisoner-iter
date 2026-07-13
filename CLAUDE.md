@@ -12,9 +12,12 @@ npm run serve        # → serve .  (open localhost:3000 by default)
 npx serve .
 ```
 
-- Root (`/`) — tournament simulator
+- Root (`/`) — narrative campaign (the trust game). On Vercel, `/` is served from `trust/index.html` via a rewrite in `vercel.json`; the app physically lives in `trust/`.
+- `/tournament/` — tournament simulator
 - `/spatial/` — spatial grid simulator
-- `/trust/` — narrative campaign
+- `/trust/` — narrative campaign (same app the root rewrite points at)
+
+Locally, `serve .` does not apply `vercel.json`, so open the folder paths directly (`/trust/`, `/tournament/`, `/spatial/`); root `/` is a directory listing.
 
 ## Architecture
 
@@ -48,11 +51,11 @@ ctx = {
 
 Strategies are stateless across rounds. All "memory" comes from `ctx`. Strategies cannot see opponent identity — they see moves only. This is a deliberate game-theoretic choice (preserves IPD model integrity vs signaling games) and what makes a strategy portable across the campaign, tournament, evolution, and spatial views.
 
-### Root — IPD Tournament Simulator (`index.html`, `js/`)
+### Tournament Simulator (`tournament/index.html`, `tournament/js/`)
 
-Round-robin tournament between selectable strategies. `js/tournament.js` is a thin wrapper: `runMatch` adapts `core/match.js` output to root's historical `{ scoreA, scoreB, roundLog }` shape (scores averaged per round). `runTournament` and `runEvolution` live here too — `runEvolution` is the replicator-dynamics population sim that Phase 4 will graduate into a presentation-grade view. `main.js` owns DOM state and wires UI; `chart.js` renders the evolution chart on a `<canvas>`.
+Round-robin tournament between selectable strategies. `tournament/js/tournament.js` is a thin wrapper: `runMatch` adapts `core/match.js` output to root's historical `{ scoreA, scoreB, roundLog }` shape (scores averaged per round). `runTournament` and `runEvolution` live here too — `runEvolution` is the replicator-dynamics population sim that Phase 4 will graduate into a presentation-grade view. `main.js` owns DOM state and wires UI; `chart.js` renders the evolution chart on a `<canvas>`.
 
-`js/strategies.js` is a display wrapper over `core/registry.js` — it contributes root-specific colors / short names / descriptions but no behavior. Behavior comes from `compileStrategy(REGISTRY[id])` inside `tournament.js`. No `.move` on the display objects.
+`tournament/js/strategies.js` is a display wrapper over `core/registry.js` — it contributes tournament-specific colors / short names / descriptions but no behavior. Behavior comes from `compileStrategy(REGISTRY[id])` inside `tournament.js`. No `.move` on the display objects.
 
 ### Spatial Simulator (`spatial/`)
 
@@ -110,7 +113,7 @@ The contract is `move(ctx)` — same as everywhere else. The swap is local to `t
 - **Cross-strategy comparison is honest** under a shared master seed. "Sam beat Marcus by 13 more points than GTfT did" is meaningful because both Sam-vs-Marcus and GTfT-vs-Marcus use the same Marcus RNG state.
 - **Environment noise** uses its own derived stream (`'__env__'`) so it doesn't drain from strategy RNGs.
 
-Anything that needs reproducible tournament results passes a fixed `masterSeed` to `runMatch`. The `MASTER_SEED = 1` in `js/tournament.js` and `CANONICAL_TOURNAMENT_SEED = 1` in `core/registry.js` are both this.
+Anything that needs reproducible tournament results passes a fixed `masterSeed` to `runMatch`. The `MASTER_SEED = 1` in `tournament/js/tournament.js` and `CANONICAL_TOURNAMENT_SEED = 1` in `core/registry.js` are both this.
 
 ## Testing & verification
 
