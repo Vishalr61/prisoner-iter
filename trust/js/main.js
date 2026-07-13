@@ -87,7 +87,12 @@ function boot() {
   initBuilderView(navigate);
   initLabView(navigate);
   initReplicatorView(navigate);
-  initDevMenu(); // DEV ONLY
+  // DEV ONLY — page-jump menu. Shown on localhost, or anywhere with ?dev in
+  // the URL. Never appears on the deployed site unless explicitly opted in.
+  const DEV = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+    || location.protocol === 'file:'
+    || new URLSearchParams(location.search).has('dev');
+  if (DEV) initDevMenu();
 
   // Campaign-end buttons
   const campaignEnd = document.getElementById('view-campaign-end');
