@@ -9,8 +9,11 @@
 import { CHARACTERS } from '../characters.js';
 import { createFace } from '../face.js';
 import { silhouetteShape } from '../silhouette.js';
-import { getCampaignReads } from '../progress.js';
+import { getCampaignReads, getSavedProgress } from '../progress.js';
+import { classify } from '../../../core/classify.js';
 import * as audio from '../audio.js';
+
+const PLAYER_COLOR = '#6fae8f';
 
 // Short presentation punches (the canonical explanations live in characters.js
 // / copy.md; these are the tight one-liners for the unmasking).
@@ -25,6 +28,36 @@ const PUNCH = {
 
 const SEEN_KEY = 'tg_reveal_seen';
 const faces = [];
+let youFace = null;
+
+function youMatch() {
+  const saved = getSavedProgress();
+  const result = classify(saved?.campaign?.playerHistory);
+  return result.character ? CHARACTERS.find(c => c.strategyId === result.character) : null;
+}
+
+function youCardHTML() {
+  const matched = youMatch();
+  if (!matched) {
+    return `
+      <div class="rvl-you">
+        <div class="rvl-you-face" data-you-face></div>
+        <div class="rvl-you-body">
+          <span class="rvl-you-kicker">And you</span>
+          <p class="rvl-you-line">You didn't play like any one of them. <em>Maybe that's the lesson.</em></p>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="rvl-you">
+      <div class="rvl-you-face" data-you-face></div>
+      <div class="rvl-you-body">
+        <span class="rvl-you-kicker">And you</span>
+        <p class="rvl-you-line">You played most like <b style="color:${matched.color}">${matched.name}</b> — <span class="rvl-you-strat">${matched.revealName}</span>.</p>
+        <p class="rvl-you-punch">${PUNCH[matched.id] || ''}</p>
+      </div>
+    </div>`;
+}
 
 let go = null;
 export function initRevealView(navigateFn) { go = navigateFn; }
@@ -38,6 +71,7 @@ export function showReveal() {
 
   if (already) {
     faces.forEach(f => f.revealTrueForm(f.glyph));
+    if (youFace && youFace.glyph) youFace.revealTrueForm(youFace.glyph);
     el.classList.remove('instant');
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('instant')));
     setTimeout(() => el.classList.add('instant'), 60);
@@ -76,6 +110,8 @@ function buildDOM(el) {
         <p class="rvl-line">These are the six classical strategies of the iterated prisoner's dilemma.</p>
         <p class="rvl-line dim">And this was the game.</p>
       </div>
+
+      ${youCardHTML()}
 
       ${readsHTML()}
 
@@ -131,6 +167,16 @@ function mountFaces(el) {
     slot.appendChild(face.el);
     faces.push(face);
   });
+
+  // The player's own face — morphs into the archetype they played like.
+  youFace = null;
+  const youSlot = el.querySelector('[data-you-face]');
+  if (youSlot) {
+    const matched = youMatch();
+    youFace = createFace(PLAYER_COLOR, { size: 72 });
+    youFace.glyph = matched ? silhouetteShape(matched.id, PLAYER_COLOR) : null;
+    youSlot.appendChild(youFace.el);
+  }
 }
 
 function runChoreography(el) {
@@ -147,6 +193,12 @@ function runChoreography(el) {
 
   el.querySelectorAll('.rvl-line').forEach(line => { show(line, delay); delay += 600; });
   delay += 200;
+  const youCard = el.querySelector('.rvl-you');
+  if (youCard) {
+    show(youCard, delay);
+    setTimeout(() => { if (youFace && youFace.glyph) { youFace.revealTrueForm(youFace.glyph); audio.play('reveal'); } }, delay + 620);
+    delay += 900;
+  }
   const reads = el.querySelector('.rvl-reads');
   if (reads) { show(reads, delay); delay += 700; }
   show(el.querySelector('.rvl-matrix-block'), delay);

@@ -259,6 +259,12 @@
   color: var(--fg-dim); max-width: 36ch; text-wrap: pretty;
 }
 
+.char-rep {
+  font-family: var(--serif); font-style: italic;
+  font-size: clamp(0.9rem, 3.4vw, 1.02rem); line-height: 1.5;
+  color: var(--char-color, var(--fg-dim)); max-width: 34ch; text-wrap: pretty; opacity: 0.92;
+}
+
 .cardv-foot { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 4px; }
 .cardv-play {
   appearance: none; cursor: pointer;
@@ -278,11 +284,13 @@
 #view-intro-card.active .cardv-kicker { animation: cardv-rise 0.6s ease 0.05s both; }
 #view-intro-card.active .cardv-hero   { animation: cardv-rise 0.7s ease 0.18s both; }
 #view-intro-card.active .char-intro-text { animation: cardv-rise 0.7s ease 0.34s both; }
-#view-intro-card.active .cardv-foot   { animation: cardv-rise 0.7s ease 0.5s both; }
+#view-intro-card.active .char-rep     { animation: cardv-rise 0.7s ease 0.44s both; }
+#view-intro-card.active .cardv-foot   { animation: cardv-rise 0.7s ease 0.56s both; }
 @keyframes cardv-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .co-kicker, .co-lines .line, .co-tap { animation: none !important; opacity: 1 !important; transform: none !important; }
   #view-intro-card.active .cardv-kicker, #view-intro-card.active .cardv-hero,
-  #view-intro-card.active .char-intro-text, #view-intro-card.active .cardv-foot { animation: none !important; opacity: 1 !important; transform: none !important; }
+  #view-intro-card.active .char-intro-text, #view-intro-card.active .char-rep,
+  #view-intro-card.active .cardv-foot { animation: none !important; opacity: 1 !important; transform: none !important; }
 }

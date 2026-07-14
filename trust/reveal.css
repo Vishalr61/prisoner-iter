@@ -67,6 +67,23 @@
 .rvl-line { font-family: var(--serif); font-size: clamp(1.1rem, 2.8vw, 1.35rem); line-height: 1.45; color: var(--fg); text-wrap: pretty; }
 .rvl-line.dim { color: var(--fg-faint); font-style: italic; }
 
+/* ── "And you" — the player's own strategy ─────────────────────────────── */
+.rvl-you {
+  display: grid; grid-template-columns: 76px 1fr; gap: 18px; align-items: center;
+  padding: 22px; border-radius: 14px;
+  background: linear-gradient(135deg, color-mix(in oklab, #6fae8f 12%, transparent), rgba(255, 255, 255, 0.015));
+  border: 1px solid color-mix(in oklab, #6fae8f 40%, var(--border));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 34px color-mix(in oklab, #6fae8f 14%, transparent);
+}
+.rvl-you-face { width: 72px; height: 72px; }
+.rvl-you-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rvl-you-kicker { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6fae8f; }
+.rvl-you-line { font-family: var(--serif); font-size: clamp(1.2rem, 3.4vw, 1.5rem); line-height: 1.25; color: var(--fg); }
+.rvl-you-line b { font-weight: 600; }
+.rvl-you-line em { font-style: italic; color: var(--fg-dim); }
+.rvl-you-strat { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
+.rvl-you-punch { font-family: var(--serif); font-size: 0.98rem; line-height: 1.5; color: var(--fg-dim); text-wrap: pretty; }
+
 /* ── Campaign reads (prediction meta-score) ────────────────────────────── */
 .rvl-reads { display: flex; align-items: center; gap: 18px; padding: 20px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
 .rvl-reads-num { font-family: var(--serif); font-size: clamp(2.2rem, 8vw, 3rem); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--fg); line-height: 1; flex-shrink: 0; }
@@ -101,18 +118,18 @@
 .rvl-actions .wsp-btn { flex: 1; min-width: 180px; }
 
 /* ── Choreography (staggered reveal) ───────────────────────────────────── */
-.rvl-head, .rvl-card, .rvl-line, .rvl-reads, .rvl-matrix-block, .rvl-bridge {
+.rvl-head, .rvl-card, .rvl-line, .rvl-you, .rvl-reads, .rvl-matrix-block, .rvl-bridge {
   opacity: 0; transform: translateY(12px);
   transition: opacity 0.55s ease, transform 0.55s ease;
 }
-.rvl-head.shown, .rvl-card.shown, .rvl-line.shown, .rvl-reads.shown, .rvl-matrix-block.shown, .rvl-bridge.shown { opacity: 1; transform: none; }
+.rvl-head.shown, .rvl-card.shown, .rvl-line.shown, .rvl-you.shown, .rvl-reads.shown, .rvl-matrix-block.shown, .rvl-bridge.shown { opacity: 1; transform: none; }
 
 /* Skip-on-repeat: fast fade-in for everything at once. */
 #view-reveal.instant .rvl-head, #view-reveal.instant .rvl-card, #view-reveal.instant .rvl-line,
-#view-reveal.instant .rvl-reads, #view-reveal.instant .rvl-matrix-block, #view-reveal.instant .rvl-bridge {
+#view-reveal.instant .rvl-you, #view-reveal.instant .rvl-reads, #view-reveal.instant .rvl-matrix-block, #view-reveal.instant .rvl-bridge {
   opacity: 1; transform: none; transition: opacity 0.3s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rvl-head, .rvl-card, .rvl-line, .rvl-reads, .rvl-matrix-block, .rvl-bridge { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .rvl-head, .rvl-card, .rvl-line, .rvl-you, .rvl-reads, .rvl-matrix-block, .rvl-bridge { opacity: 1 !important; transform: none !important; transition: none !important; }
 }

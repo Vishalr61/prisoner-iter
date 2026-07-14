@@ -27,6 +27,7 @@ const EMPTY_CAMPAIGN = () => ({
   playerHistory: {},
   sequenceOfEncounters: [],
   reads: { correct: 0, total: 0 },
+  journal: [],
 });
 
 const EMPTY_STATE = () => ({
@@ -56,6 +57,7 @@ function upgrade(state) {
   state.campaign.playerHistory        ??= {};
   state.campaign.sequenceOfEncounters ??= [];
   state.campaign.reads                ??= { correct: 0, total: 0 };
+  state.campaign.journal              ??= [];
   state.userStrategies ??= [];
   state.history        ??= { tournaments: [], simulations: [] };
   state.experiments    ??= [];
@@ -122,6 +124,19 @@ export function addReads(correct, total) {
 
 export function getCampaignReads() {
   return load()?.campaign?.reads || { correct: 0, total: 0 };
+}
+
+// Trust journal (idea #13) — one note per character, in play order.
+export function addJournalEntry(charId, note) {
+  const state = load() || EMPTY_STATE();
+  state.campaign.journal = state.campaign.journal || [];
+  if (state.campaign.journal.some(e => e.charId === charId)) return;
+  state.campaign.journal.push({ charId, note, ts: Date.now() });
+  save(state);
+}
+
+export function getJournal() {
+  return load()?.campaign?.journal || [];
 }
 
 export function markCampaignDone() {

@@ -8,7 +8,7 @@ import { initEvolutionView, showEvolution } from './views/evolution-view.js';
 import { initBuilderView, showBuilder } from './views/builder-view.js';
 import { initLabView, showLab } from './views/lab-view.js';
 import { initReplicatorView, showReplicator } from './views/replicator-view.js';
-import { getSavedProgress, clearProgress, markCampaignDone, getPreferences, setPreference } from './progress.js';
+import { getSavedProgress, clearProgress, markCampaignDone, getPreferences, setPreference, getJournal } from './progress.js';
 import { decodeStrategy } from '../../core/strategy.js';
 import * as audio from './audio.js';
 import { initMapView, showMap } from './views/map-view.js';
@@ -40,6 +40,7 @@ export function navigate(viewName, params = {}) {
 
   if (viewName === 'campaign-end') {
     markCampaignDone();
+    renderCampaignEnd();
   }
 
   if (viewName === 'reveal') {
@@ -82,6 +83,24 @@ function renderIntroCard(charIndex) {
   el.querySelector('.char-name').textContent          = char.name;
   el.querySelector('.char-name').style.color          = char.color;
   el.querySelector('.char-intro-text').textContent    = char.intro;
+
+  // Reputation callback: how you've treated the people before this one leaks
+  // into how this meeting feels. (Narrative only — the bot still can't see you.)
+  const rep = reputationFor();
+  const cardv = el.querySelector('.cardv');
+  let repEl = el.querySelector('.char-rep');
+  if (rep) {
+    if (!repEl) {
+      repEl = document.createElement('p');
+      repEl.className = 'char-rep';
+      cardv.insertBefore(repEl, el.querySelector('.cardv-foot'));
+    }
+    repEl.textContent = rep.line(char.name);
+    face.set(rep.emotion);
+  } else if (repEl) {
+    repEl.remove();
+  }
+
   el.querySelector('[data-action="begin-match"]').onclick = () => startMatch(charIndex);
 }
 
@@ -128,6 +147,47 @@ function mountTimedToggle() {
   });
   document.body.appendChild(btn);
 }
+
+// Reputation from how you've played so far (needs a couple of games).
+function reputationFor() {
+  const ph = getSavedProgress()?.campaign?.playerHistory || {};
+  const played = Object.values(ph);
+  if (played.length < 2) return null;
+  let c = 0, n = 0;
+  played.forEach(h => { c += (h.myMoves || []).filter(m => m === 'C').length; n += (h.myMoves || []).length; });
+  const rate = n ? c / n : 1;
+  if (rate < 0.4)  return { emotion: 'wary',    line: name => `Word gets around. ${name} may already be watching their back with you.` };
+  if (rate > 0.78) return { emotion: 'neutral', line: name => `You've dealt fairly so far. ${name} has no reason to expect otherwise — yet.` };
+  return null;
+}
+
+// Trust journal shown on the campaign-end screen (idea #13).
+function renderCampaignEnd() {
+  const host = document.querySelector('#view-campaign-end [data-journal]');
+  if (!host) return;
+  const entries = getJournal();
+  host.innerHTML = '';
+  if (!entries.length) return;
+  entries.forEach((e, i) => {
+    const char = CHARACTERS.find(c => c.id === e.charId);
+    if (!char) return;
+    const row = document.createElement('div');
+    row.className = 'cend-entry';
+    row.style.setProperty('--char-color', char.color);
+    const faceSlot = document.createElement('div');
+    faceSlot.className = 'cend-entry-face';
+    const face = createFace(char.color, { size: 44 });
+    faceSlot.appendChild(face.el);
+    const body = document.createElement('div');
+    body.className = 'cend-entry-body';
+    body.innerHTML = `<span class="cend-entry-name">${char.name}</span><p class="cend-entry-note">${escapeHtml(e.note)}</p>`;
+    row.appendChild(faceSlot); row.appendChild(body);
+    host.appendChild(row);
+    setTimeout(() => row.classList.add('shown'), 200 + i * 140);
+  });
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
 // ── Boot & resume ─────────────────────────────────────────────────────────────
 
