@@ -1,7 +1,8 @@
 import { CHARACTERS } from './characters.js';
 import { createFace } from './face.js';
 import { initColdOpen, initDilemma } from './views/intro.js';
-import { initMatchView, startMatch } from './views/match-view.js';
+import { initMatchView, startMatch, startReplay } from './views/match-view.js';
+import { decodeMatch } from './match.js';
 import { initSummaryView, showSummary } from './views/summary-view.js';
 import { initRevealView, showReveal } from './views/reveal-view.js';
 import { initEvolutionView, showEvolution } from './views/evolution-view.js';
@@ -238,6 +239,22 @@ function boot() {
       history.replaceState({}, '', location.pathname);
       // fall through to normal resume
     }
+  }
+
+  // ?replay=<token> — drop straight into an auto-playing shared game.
+  const replayParam = new URLSearchParams(location.search).get('replay');
+  if (replayParam) {
+    try {
+      const { charIndex, moves } = decodeMatch(replayParam);
+      if (charIndex >= 0 && charIndex < CHARACTERS.length && moves.length === CHARACTERS[charIndex].rounds) {
+        history.replaceState({}, '', location.pathname);
+        startReplay(charIndex, moves);
+        return;
+      }
+    } catch (e) {
+      console.warn('Ignoring malformed ?replay= URL:', e);
+    }
+    history.replaceState({}, '', location.pathname);
   }
 
   // Resume from saved progress

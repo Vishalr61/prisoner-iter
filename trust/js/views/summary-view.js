@@ -11,7 +11,7 @@
 
 import { CHARACTERS } from '../characters.js';
 import { createFace } from '../face.js';
-import { replayAgainst } from '../match.js';
+import { replayAgainst, encodeMatch } from '../match.js';
 import * as audio from '../audio.js';
 
 let go = null;
@@ -95,7 +95,11 @@ export function showSummary(charIndex, match) {
 
       <div class="smry-text">${char[variant].map(p => `<p>${esc(p)}</p>`).join('')}</div>
 
-      <button class="smry-continue" data-action="continue">Continue <span class="arr">&rarr;</span></button>
+      <div class="smry-foot">
+        <button class="smry-share" data-action="share">Share this game</button>
+        <button class="smry-continue" data-action="continue">${match.replay ? 'Play it yourself' : 'Continue'} <span class="arr">&rarr;</span></button>
+        <p class="smry-toast" data-toast hidden>Link copied — send it to a friend</p>
+      </div>
     </div>
   `;
 
@@ -117,13 +121,16 @@ export function showSummary(charIndex, match) {
     });
   });
 
-  el.querySelector('[data-action="continue"]').addEventListener('click', onContinue);
+  el.querySelector('[data-action="continue"]').addEventListener('click', () => onContinue(match.replay));
+
+  const moves = history.map(r => r.humanMove).join('');
+  el.querySelector('[data-action="share"]').addEventListener('click', () => shareGame(charIndex, moves));
 
   go('summary');
   audio.play('reveal');
 
   // Stagger in.
-  const parts = ['.smry-face', '.smry-scores', '.replay', '.smry-whatif', '.smry-text', '.smry-continue'];
+  const parts = ['.smry-face', '.smry-scores', '.replay', '.smry-whatif', '.smry-text', '.smry-foot'];
   parts.forEach((sel, i) => {
     const node = el.querySelector(sel);
     if (node) setTimeout(() => node.classList.add('shown'), 120 + i * 200);
@@ -166,11 +173,24 @@ function finalEmotion(char, history, match) {
   return 'neutral';
 }
 
-function onContinue() {
+function onContinue(isReplay) {
+  if (isReplay) { go('cold-open'); return; }
   const charIndex = +el.dataset.charIndex;
   const next = charIndex + 1;
   if (next < CHARACTERS.length) go('map', { next });
   else go('campaign-end');
+}
+
+function shareGame(charIndex, moves) {
+  const url = `${location.origin}${location.pathname}?replay=${encodeMatch(charIndex, moves)}`;
+  const toast = el.querySelector('[data-toast]');
+  const show = (msg) => { toast.textContent = msg; toast.hidden = false; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2600); };
+  audio.play('click');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => show('Link copied — send it to a friend'), () => show(url));
+  } else {
+    show(url);
+  }
 }
 
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }

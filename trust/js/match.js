@@ -76,6 +76,24 @@ export function replayAgainst(strategyId, humanMoves) {
   return my;
 }
 
+// Shareable replay (idea #11). Encode a played game — character index + the
+// human's move string ("CDCDC…") — into a compact URL-safe token.
+export function encodeMatch(charIndex, moves) {
+  const raw = `${charIndex}.${moves}`;
+  return btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+export function decodeMatch(token) {
+  const b64 = String(token).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(b64);
+  const dot = raw.indexOf('.');
+  if (dot < 0) throw new Error('bad match token');
+  const charIndex = parseInt(raw.slice(0, dot), 10);
+  const moves = raw.slice(dot + 1);
+  if (!Number.isInteger(charIndex) || !/^[CD]+$/.test(moves)) throw new Error('bad match token');
+  return { charIndex, moves };
+}
+
 function outcomeLabel(human, bot) {
   if (human === 'C' && bot === 'C') return 'mutual-share';
   if (human === 'D' && bot === 'D') return 'mutual-take';

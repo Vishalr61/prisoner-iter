@@ -37,12 +37,30 @@ let shareStreak  = 0;
 let pendingGuess = null;
 let reads        = { correct: 0, total: 0 };
 
+// Replay mode (idea #11) — auto-plays a shared game; saves nothing.
+let replaying    = false;
+let replayQueue  = [];
+let replayIdx    = 0;
+
 export function initMatchView(navigateFn) {
   go = navigateFn;
   el = document.getElementById('view-match');
 }
 
 export function startMatch(idx) {
+  replaying = false; replayQueue = []; replayIdx = 0;
+  begin(idx);
+}
+
+// Auto-play a shared game. `moves` is a 'C'/'D' string. Saves no progress.
+export function startReplay(idx, moves) {
+  replaying = true;
+  replayQueue = String(moves).split('');
+  replayIdx = 0;
+  begin(idx);
+}
+
+function begin(idx) {
   charIndex = idx;
   character = CHARACTERS[idx];
   match     = createMatch(character.strategyId, character.rounds);
@@ -52,6 +70,7 @@ export function startMatch(idx) {
 
   el = document.getElementById('view-match');
   el.style.setProperty('--char-color', character.color);
+  el.classList.toggle('is-replay', replaying);
   buildDOM();
   audio.playMotif(character.strategyId);
   setupRound();
@@ -62,6 +81,7 @@ export function startMatch(idx) {
 function buildDOM() {
   el.innerHTML = `
     <div class="mtch2">
+      <div class="m2-replay-banner"><span class="dot"></span>Watching a shared game vs ${esc(character.name)}</div>
       <div class="m2-track" data-progress></div>
 
       <div class="m2-duo">
@@ -151,6 +171,17 @@ function setupRound() {
   const predictEl = q('[data-predict]');
   const choicesEl = q('[data-choices]');
   pendingGuess = null;
+
+  // Replay: no input — auto-feed the shared move sequence.
+  if (replaying) {
+    predictEl.hidden = true;
+    choicesEl.style.display = 'none';
+    if (replayIdx < replayQueue.length) {
+      setTimeout(() => { if (!busy) handleMove(replayQueue[replayIdx++]); }, isReduced() ? 320 : 750);
+    }
+    return;
+  }
+
   if (roundIndex >= 2 && !shattered) {
     predictEl.hidden = false;
     predictEl.querySelector('[data-predict-result]').className = 'predict-result';
@@ -245,7 +276,7 @@ function resolveOutcome(result, grimNow) {
   outcomeEl.innerHTML = outcomeLine(humanMove, botMove);
   outcomeEl.className = 'm2-outcome ' + outcomeClass(outcome);
 
-  saveProgress(charIndex, match.getHistory());
+  if (!replaying) saveProgress(charIndex, match.getHistory());
   renderProgress(match.getHistory());
 
   const done = result.round >= character.rounds;
@@ -254,12 +285,15 @@ function resolveOutcome(result, grimNow) {
     const coopRate = history.filter(r => r.humanMove === 'C').length / history.length;
     match.reads = reads;
     match.trustEnd = trust;
-    markCompleted(character.id, coopRate, history);
-    addReads(reads.correct, reads.total);
-    const jv = character.strategyId === 'grim'
-      ? (history.some(r => r.humanMove === 'D') ? 'summaryD' : 'summaryC')
-      : (history.filter(r => r.humanMove === 'C').length > history.length / 2 ? 'summaryC' : 'summaryD');
-    addJournalEntry(character.id, character[jv][0]);
+    match.replay = replaying;
+    if (!replaying) {
+      markCompleted(character.id, coopRate, history);
+      addReads(reads.correct, reads.total);
+      const jv = character.strategyId === 'grim'
+        ? (history.some(r => r.humanMove === 'D') ? 'summaryD' : 'summaryC')
+        : (history.filter(r => r.humanMove === 'C').length > history.length / 2 ? 'summaryC' : 'summaryD');
+      addJournalEntry(character.id, character[jv][0]);
+    }
     setTimeout(() => { faceThem.stopIdle(); faceYou.stopIdle(); go('summary', { charIndex, match }); }, 1250);
   } else {
     setTimeout(() => { busy = false; setupRound(); }, 1400);

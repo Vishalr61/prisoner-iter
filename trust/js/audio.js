@@ -131,9 +131,7 @@ function noise(opts = {}) {
 
 // ── Event stings ─────────────────────────────────────────────────────────────
 export function play(name) {
-  if (!enabled) return;
-  if (!armed) arm();
-  if (!ctx) return;
+  if (!enabled || !armed || !ctx) return;   // stay silent until a real gesture arms audio
   resumeIfNeeded();
   switch (name) {
     case 'click':   tone(N.C5, { type: 'sine', dur: 0.05, peak: 0.04 }); break;
@@ -205,9 +203,7 @@ const MOTIFS = {
 };
 
 export function playMotif(strategyId) {
-  if (!enabled) return;
-  if (!armed) arm();
-  if (!ctx) return;
+  if (!enabled || !armed || !ctx) return;   // stay silent until a real gesture arms audio
   resumeIfNeeded();
   const m = MOTIFS[strategyId] || MOTIFS.tft;
   m.notes.forEach((f, i) => tone(f, { type: m.type, dur: 0.34, peak: 0.09, delay: i * 0.12 }));

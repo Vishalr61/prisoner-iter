@@ -99,9 +99,23 @@
 .whatif-row.is-you .whatif-val { color: var(--char-color, var(--fg)); }
 .whatif-caption { font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--fg-dim); text-align: center; text-wrap: pretty; }
 
+/* Footer: share + continue */
+.smry-foot { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+.smry-share {
+  appearance: none; cursor: pointer; background: transparent;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 9px 18px;
+  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-dim); transition: color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+.smry-share:hover { color: var(--fg); border-color: var(--fg-dim); }
+.smry-share:active { transform: scale(0.97); }
+.smry-toast { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; color: var(--share); opacity: 0; transition: opacity 0.25s ease; max-width: 90vw; overflow-wrap: anywhere; }
+.smry-toast[hidden] { display: none; }
+.smry-toast.show { opacity: 1; }
+
 /* Stagger */
-.smry-face, .smry-scores, .replay, .smry-whatif, .smry-text, .smry-continue { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
-.smry-face.shown, .smry-scores.shown, .replay.shown, .smry-whatif.shown, .smry-text.shown, .smry-continue.shown { opacity: 1; transform: none; }
+.smry-face, .smry-scores, .replay, .smry-whatif, .smry-text, .smry-foot { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
+.smry-face.shown, .smry-scores.shown, .replay.shown, .smry-whatif.shown, .smry-text.shown, .smry-foot.shown { opacity: 1; transform: none; }
 
 /* ── Campaign end ──────────────────────────────────────────────────────── */
 .cend {
@@ -132,6 +146,6 @@
 .cend-entry-note { font-family: var(--serif); font-style: italic; font-size: 0.9rem; line-height: 1.4; color: var(--fg-dim); text-wrap: pretty; }
 
 @media (prefers-reduced-motion: reduce) {
-  .smry-face, .smry-scores, .replay, .smry-whatif, .smry-text, .smry-continue { opacity: 1 !important; transform: none !important; }
+  .smry-face, .smry-scores, .replay, .smry-whatif, .smry-text, .smry-foot { opacity: 1 !important; transform: none !important; }
   .cend-entry { opacity: 1 !important; transform: none !important; }
 }
