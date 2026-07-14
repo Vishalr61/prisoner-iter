@@ -26,6 +26,7 @@ const EMPTY_CAMPAIGN = () => ({
   completedCharacters: [],
   playerHistory: {},
   sequenceOfEncounters: [],
+  reads: { correct: 0, total: 0 },
 });
 
 const EMPTY_STATE = () => ({
@@ -54,6 +55,7 @@ function upgrade(state) {
   state.campaign.completedCharacters  ??= [];
   state.campaign.playerHistory        ??= {};
   state.campaign.sequenceOfEncounters ??= [];
+  state.campaign.reads                ??= { correct: 0, total: 0 };
   state.userStrategies ??= [];
   state.history        ??= { tournaments: [], simulations: [] };
   state.experiments    ??= [];
@@ -106,6 +108,20 @@ export function markCompleted(charId, coopRate, history) {
   delete state.myMoves;
   delete state.theirMoves;
   save(state);
+}
+
+// Accumulate prediction accuracy across the whole campaign (idea #10).
+export function addReads(correct, total) {
+  if (!total) return;
+  const state = load() || EMPTY_STATE();
+  state.campaign.reads = state.campaign.reads || { correct: 0, total: 0 };
+  state.campaign.reads.correct += correct;
+  state.campaign.reads.total   += total;
+  save(state);
+}
+
+export function getCampaignReads() {
+  return load()?.campaign?.reads || { correct: 0, total: 0 };
 }
 
 export function markCampaignDone() {

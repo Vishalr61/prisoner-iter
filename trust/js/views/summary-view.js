@@ -11,6 +11,7 @@
 
 import { CHARACTERS } from '../characters.js';
 import { createFace } from '../face.js';
+import { replayAgainst } from '../match.js';
 import * as audio from '../audio.js';
 
 let go = null;
@@ -52,6 +53,13 @@ export function showSummary(charIndex, match) {
   const reads = match.reads && match.reads.total > 0
     ? `<p class="replay-reads">You read them <b>${match.reads.correct}/${match.reads.total}</b></p>` : '';
 
+  // Counterfactual — what the two extreme lines would have scored you.
+  const n = history.length;
+  const allC = replayAgainst(char.strategyId, Array(n).fill('C'));
+  const allD = replayAgainst(char.strategyId, Array(n).fill('D'));
+  const you  = match.myScore;
+  const whatif = whatIfHTML(allC, you, allD);
+
   el.innerHTML = `
     <div class="smry">
       <div class="smry-kicker"><span class="dot"></span>You &amp; ${esc(char.name)} · ${history.length} round${history.length === 1 ? '' : 's'}</div>
@@ -83,6 +91,8 @@ export function showSummary(charIndex, match) {
         ${reads}
       </div>
 
+      ${whatif}
+
       <div class="smry-text">${char[variant].map(p => `<p>${esc(p)}</p>`).join('')}</div>
 
       <button class="smry-continue" data-action="continue">Continue <span class="arr">&rarr;</span></button>
@@ -113,11 +123,38 @@ export function showSummary(charIndex, match) {
   audio.play('reveal');
 
   // Stagger in.
-  const parts = ['.smry-face', '.smry-scores', '.replay', '.smry-text', '.smry-continue'];
+  const parts = ['.smry-face', '.smry-scores', '.replay', '.smry-whatif', '.smry-text', '.smry-continue'];
   parts.forEach((sel, i) => {
     const node = el.querySelector(sel);
     if (node) setTimeout(() => node.classList.add('shown'), 120 + i * 200);
   });
+}
+
+function whatIfHTML(allC, you, allD) {
+  const max = Math.max(allC, you, allD, 1);
+  const best = Math.max(allC, you, allD);
+  const rows = [
+    { label: 'Always share', val: allC, you: false },
+    { label: 'Your game',    val: you,  you: true },
+    { label: 'Always take',  val: allD, you: false },
+  ].map(r => `
+    <div class="whatif-row ${r.you ? 'is-you' : ''} ${r.val === best ? 'is-best' : ''}">
+      <span class="whatif-label">${r.label}</span>
+      <span class="whatif-bar"><span style="width:${Math.round((r.val / max) * 100)}%"></span></span>
+      <span class="whatif-val">${r.val}</span>
+    </div>`).join('');
+
+  let caption;
+  if (you >= best)        caption = 'You found the best line here.';
+  else if (best === allC) caption = 'Sharing more would have paid off.';
+  else                    caption = 'Taking more would have scored higher — but trust is worth something too.';
+
+  return `
+    <div class="smry-whatif">
+      <span class="whatif-title">The road not taken</span>
+      <div class="whatif-rows">${rows}</div>
+      <p class="whatif-caption">${caption}</p>
+    </div>`;
 }
 
 function finalEmotion(char, history, match) {

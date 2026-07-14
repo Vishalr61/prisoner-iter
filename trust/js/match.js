@@ -55,6 +55,27 @@ export function createMatch(strategyId, totalRounds = 0) {
   return { step, getHistory, get myScore() { return myScore; }, get theirScore() { return theirScore; } };
 }
 
+// Counterfactual: replay a character's strategy against a FIXED human move
+// sequence (e.g. all-cooperate or all-defect) and return the human's score.
+// The six campaign strategies are deterministic, so a fixed seed is exact.
+export function replayAgainst(strategyId, humanMoves) {
+  const strategy = compileStrategy(getStrategy(strategyId));
+  const rng = makeStrategyRng(1, strategyId);
+  const myMoves = [], theirMoves = [];
+  let my = 0;
+  for (let i = 0; i < humanMoves.length; i++) {
+    const ctx = { myMoves: theirMoves, theirMoves: myMoves, round: i, totalRounds: humanMoves.length, rng };
+    const bot = strategy.move(ctx);
+    const h = humanMoves[i];
+    if      (h === 'C' && bot === 'C') my += PAYOFFS.R;
+    else if (h === 'C' && bot === 'D') my += PAYOFFS.S;
+    else if (h === 'D' && bot === 'C') my += PAYOFFS.T;
+    else                               my += PAYOFFS.P;
+    myMoves.push(h); theirMoves.push(bot);
+  }
+  return my;
+}
+
 function outcomeLabel(human, bot) {
   if (human === 'C' && bot === 'C') return 'mutual-share';
   if (human === 'D' && bot === 'D') return 'mutual-take';

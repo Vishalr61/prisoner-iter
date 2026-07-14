@@ -82,9 +82,26 @@
 .replay-reads { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
 .replay-reads b { color: var(--char-color, var(--fg)); font-weight: 500; }
 
+/* ── What-if / counterfactual ──────────────────────────────────────────── */
+.smry-whatif { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 10px; }
+.whatif-title { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-faint); text-align: center; }
+.whatif-rows { display: flex; flex-direction: column; gap: 8px; }
+.whatif-row { display: grid; grid-template-columns: 84px 1fr auto; align-items: center; gap: 10px; }
+.whatif-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-dim); text-align: right; }
+.whatif-bar { height: 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.whatif-bar > span { display: block; height: 100%; border-radius: 5px; background: var(--fg-faint); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.whatif-val { font-family: var(--serif); font-size: 0.95rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--fg-dim); min-width: 22px; text-align: right; }
+.whatif-row.is-best .whatif-bar > span { background: var(--share); }
+.whatif-row.is-best .whatif-val { color: var(--share); }
+.whatif-row.is-you .whatif-label { color: var(--char-color, var(--fg)); }
+.whatif-row.is-you .whatif-bar > span { background: var(--char-color, var(--fg)); }
+.whatif-row.is-you.is-best .whatif-bar > span { background: var(--share); }
+.whatif-row.is-you .whatif-val { color: var(--char-color, var(--fg)); }
+.whatif-caption { font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--fg-dim); text-align: center; text-wrap: pretty; }
+
 /* Stagger */
-.smry-face, .smry-scores, .replay, .smry-text, .smry-continue { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
-.smry-face.shown, .smry-scores.shown, .replay.shown, .smry-text.shown, .smry-continue.shown { opacity: 1; transform: none; }
+.smry-face, .smry-scores, .replay, .smry-whatif, .smry-text, .smry-continue { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
+.smry-face.shown, .smry-scores.shown, .replay.shown, .smry-whatif.shown, .smry-text.shown, .smry-continue.shown { opacity: 1; transform: none; }
 
 /* ── Campaign end ──────────────────────────────────────────────────────── */
 .cend {
@@ -101,5 +118,5 @@
 .cend-actions .wsp-btn { width: 100%; }
 
 @media (prefers-reduced-motion: reduce) {
-  .smry-face, .smry-scores, .replay, .smry-text, .smry-continue { opacity: 1 !important; transform: none !important; }
+  .smry-face, .smry-scores, .replay, .smry-whatif, .smry-text, .smry-continue { opacity: 1 !important; transform: none !important; }
 }

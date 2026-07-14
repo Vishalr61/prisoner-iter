@@ -9,6 +9,7 @@
 import { CHARACTERS } from '../characters.js';
 import { createFace } from '../face.js';
 import { silhouetteShape } from '../silhouette.js';
+import { getCampaignReads } from '../progress.js';
 import * as audio from '../audio.js';
 
 // Short presentation punches (the canonical explanations live in characters.js
@@ -76,6 +77,8 @@ function buildDOM(el) {
         <p class="rvl-line dim">And this was the game.</p>
       </div>
 
+      ${readsHTML()}
+
       <div class="rvl-matrix-block">
         <span class="rvl-matrix-label">The payoffs · you / them</span>
         <div class="rvl-matrix">
@@ -107,6 +110,17 @@ function buildDOM(el) {
   });
 }
 
+function readsHTML() {
+  const r = getCampaignReads();
+  if (!r.total) return '';
+  const pct = Math.round((r.correct / r.total) * 100);
+  return `
+    <div class="rvl-reads">
+      <span class="rvl-reads-num">${r.correct}<span class="rvl-reads-slash">/</span>${r.total}</span>
+      <p class="rvl-reads-text">Across the campaign you called their move <b>${r.correct} of ${r.total} times</b> (${pct}%). Reading someone <em>is</em> modeling the strategy behind them — which is exactly what you just learned to do.</p>
+    </div>`;
+}
+
 function mountFaces(el) {
   faces.length = 0;
   CHARACTERS.forEach((c, i) => {
@@ -133,6 +147,8 @@ function runChoreography(el) {
 
   el.querySelectorAll('.rvl-line').forEach(line => { show(line, delay); delay += 600; });
   delay += 200;
+  const reads = el.querySelector('.rvl-reads');
+  if (reads) { show(reads, delay); delay += 700; }
   show(el.querySelector('.rvl-matrix-block'), delay);
   delay += 600;
   show(el.querySelector('.rvl-bridge'), delay);

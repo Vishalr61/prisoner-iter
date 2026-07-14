@@ -9,7 +9,7 @@
 
 import { CHARACTERS } from '../characters.js';
 import { createMatch } from '../match.js';
-import { saveProgress, markCompleted, getPreferences } from '../progress.js';
+import { saveProgress, markCompleted, getPreferences, addReads } from '../progress.js';
 import { createFace } from '../face.js';
 import * as audio from '../audio.js';
 import { flash, shake, burst, pulse, haptic, isReduced } from '../juice.js';
@@ -255,6 +255,7 @@ function resolveOutcome(result, grimNow) {
     match.reads = reads;
     match.trustEnd = trust;
     markCompleted(character.id, coopRate, history);
+    addReads(reads.correct, reads.total);
     setTimeout(() => { faceThem.stopIdle(); faceYou.stopIdle(); go('summary', { charIndex, match }); }, 1250);
   } else {
     setTimeout(() => { busy = false; setupRound(); }, 1400);
