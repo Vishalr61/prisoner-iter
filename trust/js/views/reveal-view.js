@@ -131,16 +131,16 @@ function buildDOM(el) {
       </div>
 
       <div class="rvl-bridge">
-        <p class="rvl-bridge-text">You've met the players. Now watch what happens when they all compete at once.</p>
+        <p class="rvl-bridge-text">You've met the players. But every game so far was clean. Real life isn't.</p>
         <div class="rvl-actions">
-          <button class="wsp-btn wsp-btn-primary" data-action="to-evolution">Watch them compete →</button>
+          <button class="wsp-btn wsp-btn-primary" data-action="to-noise">One more thing →</button>
           <button class="wsp-btn wsp-btn-ghost" data-action="play-again">Play again</button>
         </div>
       </div>
     </div>
   `;
 
-  el.querySelector('[data-action="to-evolution"]')?.addEventListener('click', () => go('evolution'));
+  el.querySelector('[data-action="to-noise"]')?.addEventListener('click', () => go('noise'));
   el.querySelector('[data-action="play-again"]')?.addEventListener('click', () => {
     import('../progress.js').then(({ clearProgress }) => { clearProgress(); go('cold-open'); });
   });

@@ -5,6 +5,7 @@ import { initMatchView, startMatch, startReplay } from './views/match-view.js';
 import { decodeMatch } from './match.js';
 import { initSummaryView, showSummary } from './views/summary-view.js';
 import { initRevealView, showReveal } from './views/reveal-view.js';
+import { initNoiseView, showNoise } from './views/noise-view.js';
 import { initEvolutionView, showEvolution } from './views/evolution-view.js';
 import { initBuilderView, showBuilder } from './views/builder-view.js';
 import { initLabView, showLab } from './views/lab-view.js';
@@ -19,7 +20,7 @@ import { initDevMenu } from './dev-menu.js'; // DEV ONLY
 
 const VIEWS = [
   'cold-open', 'dilemma', 'intro-card', 'match', 'map',
-  'summary', 'campaign-end', 'reveal', 'evolution', 'builder', 'lab', 'replicator',
+  'summary', 'campaign-end', 'reveal', 'noise', 'evolution', 'builder', 'lab', 'replicator',
 ];
 
 export function navigate(viewName, params = {}) {
@@ -46,6 +47,10 @@ export function navigate(viewName, params = {}) {
 
   if (viewName === 'reveal') {
     showReveal();
+  }
+
+  if (viewName === 'noise') {
+    showNoise();
   }
 
   if (viewName === 'map') {
@@ -198,6 +203,7 @@ function boot() {
   initMatchView(navigate);
   initSummaryView(navigate);
   initRevealView(navigate);
+  initNoiseView(navigate);
   initEvolutionView(navigate);
   initBuilderView(navigate);
   initLabView(navigate);

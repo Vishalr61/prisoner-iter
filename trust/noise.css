@@ -1,0 +1,59 @@
+/* ════════════════════════════════════════════════════════════════════════
+   noise.css — the "world is noisy" chapter (idea #2). Uses tokens from
+   style.css / match.css. Reuses .wsp-btn from compete.css.
+   ════════════════════════════════════════════════════════════════════════ */
+
+#view-noise { justify-content: flex-start; }
+.noise {
+  width: 100%; max-width: 560px; margin: auto;
+  display: flex; flex-direction: column; gap: clamp(22px, 4.5vh, 38px);
+  padding: clamp(46px, 9vh, 84px) 16px clamp(28px, 6vh, 52px);
+}
+
+.noise-head { display: flex; flex-direction: column; gap: 12px; }
+.noise-kicker { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--fg-faint); }
+.noise-kicker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fg-dim); }
+.noise-title { font-family: var(--serif); font-weight: 600; font-size: clamp(2rem, 7vw, 2.8rem); line-height: 1.05; letter-spacing: -0.02em; color: var(--fg); }
+.noise-title em { font-style: italic; font-weight: 400; color: var(--fg-dim); }
+.noise-deck { font-family: var(--serif); font-style: italic; font-size: clamp(1rem, 2.6vw, 1.18rem); line-height: 1.5; color: var(--fg-dim); text-wrap: pretty; max-width: 46ch; }
+
+.noise-demo { display: flex; flex-direction: column; gap: 16px; }
+.noise-lane { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; border: 1px solid var(--rule); border-radius: 14px; background: rgba(255, 255, 255, 0.015); }
+.noise-lane[data-lane="forgiving"] { border-color: color-mix(in oklab, var(--share) 32%, var(--rule)); }
+.noise-lane[data-lane="strict"]    { border-color: color-mix(in oklab, var(--take) 24%, var(--rule)); }
+.noise-lane-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.noise-lane-title { font-family: var(--serif); font-size: 1.1rem; font-weight: 600; color: var(--fg); }
+.noise-lane-strat { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
+
+.noise-grid { display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+.noise-grid::-webkit-scrollbar { display: none; }
+.noise-labels { display: flex; flex-direction: column; gap: 4px; justify-content: flex-end; padding-right: 2px; }
+.noise-labels .nc-num { height: 14px; }
+.nl { font-family: var(--mono); font-size: 0.54rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-dim); height: 22px; display: flex; align-items: center; }
+.noise-col { display: flex; flex-direction: column; gap: 4px; align-items: center; opacity: 0; transform: translateY(5px); transition: opacity 0.25s ease, transform 0.25s ease; }
+.noise-col.on { opacity: 1; transform: none; }
+.nc-num { font-family: var(--mono); font-size: 0.54rem; height: 14px; line-height: 14px; color: var(--fg-faint); }
+.nc-cell { width: 22px; height: 22px; border-radius: 6px; background: var(--rule); }
+.nc-cell.share { background: color-mix(in oklab, var(--share) 30%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--share) 55%, transparent); }
+.nc-cell.take  { background: transparent; box-shadow: inset 0 0 0 1.5px var(--take); }
+.nc-cell.garble { box-shadow: inset 0 0 0 1.5px var(--take), 0 0 0 2px var(--bg), 0 0 10px -1px var(--take); }
+
+.noise-score { display: flex; align-items: baseline; gap: 6px; }
+.noise-score-val { font-family: var(--serif); font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.noise-lane[data-lane="forgiving"] .noise-score-val { color: var(--share); }
+.noise-lane[data-lane="strict"]    .noise-score-val { color: var(--fg-dim); }
+.noise-score-lbl { font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); }
+
+.noise-punch { font-family: var(--serif); font-size: clamp(1.02rem, 2.8vw, 1.22rem); line-height: 1.55; color: var(--fg-dim); text-wrap: pretty; transition: color 0.4s ease; }
+.noise-punch.resolved { color: var(--fg); }
+.noise-punch b { color: var(--share); font-weight: 600; }
+.noise-punch em { font-style: italic; color: var(--fg-dim); }
+
+.noise-actions { opacity: 0; transition: opacity 0.5s ease; }
+.noise-actions.shown { opacity: 1; }
+.noise-actions .wsp-btn { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .noise-col { opacity: 1 !important; transform: none !important; }
+  .noise-actions { opacity: 1 !important; }
+}
