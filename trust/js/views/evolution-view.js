@@ -4,6 +4,9 @@ import { compileStrategy } from '../../../core/strategy.js';
 import { runMatch }    from '../../../core/match.js';
 import { classify }    from '../../../core/classify.js';
 import { getSavedProgress, getUserStrategies, deleteUserStrategy } from '../progress.js';
+import { createFace } from '../face.js';
+
+let evoFaces = {};
 
 // The INSIGHTS array below was written for tournament seed=1, which produces
 // a specific ranking (Theo always 4th, Marcus always last, top three rotating
@@ -83,7 +86,19 @@ export function showEvolution() {
   ];
   const timeline = buildTimeline(computeHistories());
   buildDOM(el);
+  mountEvoFaces(el);
   runSimulation(el, timeline);
+}
+
+function mountEvoFaces(el) {
+  evoFaces = {};
+  ALL.forEach(c => {
+    const slot = el.querySelector(`[data-face-id="${c.id}"]`);
+    if (!slot) return;
+    const face = createFace(c.color, { size: 30 });
+    slot.appendChild(face.el);
+    evoFaces[c.id] = face;
+  });
 }
 
 // ── Tournament engine ─────────────────────────────────────────────────────────
@@ -146,7 +161,7 @@ function buildDOM(el) {
           ${ALL.map(c => `
             <div class="cmp-row${c.isUser ? ' cmp-row-user' : ''}" data-id="${c.id}" style="--char-color:${c.color}">
               <span class="cmp-rank" data-rank></span>
-              <span class="cmp-pip" style="background:${c.color}"></span>
+              <span class="cmp-face" data-face-id="${c.id}"></span>
               <div class="cmp-names">
                 <span class="cmp-name">${c.name}</span>
                 <span class="cmp-label">${c.label}</span>
@@ -262,6 +277,9 @@ function sortBoardFlip(el, scores) {
     if (i === 0) row.classList.add('win');
     if (i < 3) row.classList.add('podium');
     board.appendChild(row);
+    // Faces react to their finish: the winner beams, the cellar-dweller sours.
+    const face = evoFaces[row.dataset.id];
+    if (face) face.set(i === 0 ? 'warm' : i === rows.length - 1 ? 'wary' : i < 3 ? 'neutral' : 'neutral');
   });
 
   const last = new Map(rows.map(r => [r.dataset.id, r.getBoundingClientRect().top]));

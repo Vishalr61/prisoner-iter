@@ -13,6 +13,9 @@
 import { CHARACTERS } from '../characters.js';
 import { createFace } from '../face.js';
 import { getSavedProgress } from '../progress.js';
+import { compileStrategy } from '../../../core/strategy.js';
+import { getStrategy } from '../../../core/registry.js';
+import { makeStrategyRng } from '../../../core/rng.js';
 import * as audio from '../audio.js';
 
 const PAY = { R: 3, T: 5, P: 1, S: 0 };
@@ -30,6 +33,13 @@ export function showMap(params = {}) {
   const saved = getSavedProgress();
   const completed = new Set(saved?.campaign?.completedCharacters ?? []);
   const history = saved?.campaign?.playerHistory ?? {};
+
+  // Finale: the journey map reshapes into an all-vs-all relationship web.
+  if (params.finale || completed.size >= CHARACTERS.length) {
+    renderWeb();
+    audio.play('whoosh');
+    return;
+  }
 
   let current = CHARACTERS.findIndex(c => !completed.has(c.id));
   if (typeof params.next === 'number') current = params.next;
@@ -82,6 +92,80 @@ export function showMap(params = {}) {
   el.querySelectorAll('.map-node').forEach((n, i) => setTimeout(() => n.classList.add('shown'), 120 + i * 110));
   const cta = el.querySelector('.map-cta');
   if (cta) setTimeout(() => cta.classList.add('shown'), 120 + CHARACTERS.length * 110);
+}
+
+// ── Relationship web (idea #15) ────────────────────────────────────────────
+const EDGE_COLOR = { coop: 'var(--share)', exploit: 'var(--sam)', defect: 'var(--take)' };
+
+function renderWeb() {
+  const N = CHARACTERS.length;
+  const nodes = CHARACTERS.map((c, i) => {
+    const a = (-90 + i * (360 / N)) * Math.PI / 180;
+    return { c, i, x: 50 + 40 * Math.cos(a), y: 50 + 40 * Math.sin(a) };
+  });
+
+  const edges = [];
+  for (let i = 0; i < N; i++) {
+    for (let j = i + 1; j < N; j++) {
+      const rel = pairRelation(CHARACTERS[i].strategyId, CHARACTERS[j].strategyId);
+      edges.push(`<line x1="${nodes[i].x}" y1="${nodes[i].y}" x2="${nodes[j].x}" y2="${nodes[j].y}"
+        stroke="${EDGE_COLOR[rel]}" stroke-width="${rel === 'coop' ? 2.4 : 1.6}" stroke-linecap="round"
+        vector-effect="non-scaling-stroke" opacity="${rel === 'defect' ? 0.35 : 0.6}" />`);
+    }
+  }
+
+  el.innerHTML = `
+    <div class="map web">
+      <div class="map-head">
+        <div class="map-kicker"><span class="dot"></span>The whole cast</div>
+        <h1 class="map-title">How they'd treat <em>each other</em>.</h1>
+        <p class="map-progress">Every pair, at once</p>
+      </div>
+      <div class="web-stage">
+        <svg class="web-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${edges.join('')}</svg>
+        ${nodes.map(n => `
+          <div class="web-node" style="left:${n.x}%; top:${n.y}%">
+            <div class="web-node-face" data-web-face="${n.i}"></div>
+            <span class="web-node-name" style="color:${n.c.color}">${n.c.name}</span>
+          </div>`).join('')}
+      </div>
+      <div class="web-legend">
+        <span class="web-key"><span class="web-dot" style="background:var(--share)"></span>cooperate</span>
+        <span class="web-key"><span class="web-dot" style="background:var(--sam)"></span>one exploits</span>
+        <span class="web-key"><span class="web-dot" style="background:var(--take)"></span>mutual ruin</span>
+      </div>
+      <p class="web-line">Cooperation clusters together. Defection isolates itself. That shape is what decides the tournament.</p>
+      <button class="map-cta wsp-btn wsp-btn-primary" data-action="finish">How it ends &rarr;</button>
+    </div>
+  `;
+
+  nodes.forEach(n => {
+    const slot = el.querySelector(`[data-web-face="${n.i}"]`);
+    if (slot) slot.appendChild(createFace(n.c.color, { size: 46 }).el);
+  });
+  el.querySelector('[data-action="finish"]').addEventListener('click', () => go('campaign-end'));
+
+  el.querySelectorAll('.web-node, .web-legend, .web-line, .map-cta').forEach((n, i) =>
+    setTimeout(() => n.classList.add('shown'), 200 + i * 90));
+  setTimeout(() => el.querySelector('.web-svg')?.classList.add('shown'), 400);
+}
+
+// Run two campaign strategies against each other and classify the relationship.
+function pairRelation(idA, idB) {
+  const A = compileStrategy(getStrategy(idA));
+  const B = compileStrategy(getStrategy(idB));
+  const rngA = makeStrategyRng(1, idA), rngB = makeStrategyRng(1, idB);
+  const aM = [], bM = [];
+  for (let i = 0; i < 20; i++) {
+    const a = A.move({ myMoves: aM, theirMoves: bM, round: i, totalRounds: 20, rng: rngA });
+    const b = B.move({ myMoves: bM, theirMoves: aM, round: i, totalRounds: 20, rng: rngB });
+    aM.push(a); bM.push(b);
+  }
+  const rA = aM.filter(m => m === 'C').length / aM.length;
+  const rB = bM.filter(m => m === 'C').length / bM.length;
+  if (rA > 0.6 && rB > 0.6) return 'coop';
+  if (rA < 0.4 && rB < 0.4) return 'defect';
+  return 'exploit';
 }
 
 function nodeHTML(char, i, { completed, current, history }) {

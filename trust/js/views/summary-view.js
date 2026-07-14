@@ -178,7 +178,7 @@ function onContinue(isReplay) {
   const charIndex = +el.dataset.charIndex;
   const next = charIndex + 1;
   if (next < CHARACTERS.length) go('map', { next });
-  else go('campaign-end');
+  else go('map', { finale: true });   // the map reshapes into the relationship web
 }
 
 function shareGame(charIndex, moves) {
