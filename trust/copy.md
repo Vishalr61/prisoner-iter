@@ -170,5 +170,18 @@ Ren used Win-Stay, Lose-Shift. If a round went well, repeat it. If it went badly
 
 ---
 
+## The Relationship Web (map finale)
+Kicker: The whole cast
+Title: How they'd treat each other.
+Line: Cooperation clusters together. Defection isolates itself. That shape is what decides the tournament.
+CTA: How it ends →
+
+## The Noise Chapter (reveal → noise → evolution)
+Kicker: One more thing
+Title: The world is noisy.
+Deck: In real life, signals get crossed — a kind move is read as a slight. Watch what one garbled message does to two ways of playing.
+Resolution: One garbled message and the strict mirrors never recovered — they punished each other for the rest of the game (43 pts). The forgiving pair let it go, kept cooperating, and scored more (47 pts). Reciprocate — but leave room for mistakes.
+CTA: Now watch them all compete →
+
 ## Footer
 For the curious: The full tournament tool → | The territorial simulator →

@@ -65,7 +65,7 @@ Round-robin tournament between selectable strategies. `tournament/js/tournament.
 
 ### Trust Game — Narrative Campaign (`trust/`)
 
-Linear campaign where the player plays IPD against 6 characters, each a disguised strategy. View flow: `cold-open → dilemma → map → intro-card → match → summary → map → … → campaign-end → reveal → evolution`. The campaign **map** (`js/views/map-view.js`, `map.css`) sits between characters and shows the journey — completed people as faces in their final emotion, the next as a pulsing portrait, the rest as mystery `?` nodes (the strategy reveal is saved for the reveal screen).
+Linear campaign where the player plays IPD against 6 characters, each a disguised strategy. View flow: `cold-open → dilemma → map → (intro-card → match → summary → map)×6 → map[relationship web] → campaign-end → reveal → noise → evolution → replicator`. The campaign **map** (`js/views/map-view.js`, `map.css`) sits between characters and shows the journey — completed people as faces in their final emotion, the next as a pulsing portrait, the rest as mystery `?` nodes (the strategy reveal is saved for the reveal screen). After the last character the map renders in **finale/web mode** (`showMap({finale:true})`): an all-vs-all relationship web of the six, every pair's relationship (cooperate / one-exploits / mutual-ruin) drawn as a colored edge computed by running the strategies against each other.
 
 **Entertainment layer** (shared across views):
 - `js/audio.js` — procedural Web Audio. An adaptive ambient pad bends major→minor as betrayal accumulates; per-outcome stings. Gesture-gated (`arm()` on first pointerdown), honors `preferences.soundEnabled` (persisted via `progress.js` `getPreferences`/`setPreference`), toggled by the fixed `#tg-sound` button mounted in `main.js`.
@@ -73,7 +73,16 @@ Linear campaign where the player plays IPD against 6 characters, each a disguise
 - `js/juice.js` — screen effects (`flash`/`shake`/`burst`/`pulse`), all gated behind `prefers-reduced-motion` in one place.
 - `game.css` — the shared visual system: face, trust meter, coin payoff, prediction, juice, sound toggle.
 
-The **match** (`js/views/match-view.js`) drives all of it: the opponent face reacts each round, coins drop per payoff, a trust meter fills/drains/shatters (Grim), a "call it" prediction runs from round 3, plus screen juice + audio. The engine contract (`createMatch`/`step`/`getHistory` in `trust/js/match.js`) is untouched.
+The **match** (`js/views/match-view.js`) drives all of it: **two** reacting faces (you + opponent) side by side, coins that drop per payoff, a trust meter that fills/drains/shatters (Grim), payoff hints on the Share/Take buttons, a "call it" prediction from round 3, per-character audio motif (`audio.playMotif`), coin/shard particles + haptics (`juice.haptic`), and an optional timed-decision mode (⏱ toggle, `preferences.timedMode`, 6s auto-take). It also supports a **replay** mode: `startReplay(idx, moves)` auto-plays a shared game and saves nothing. The engine contract (`createMatch`/`step`/`getHistory` in `trust/js/match.js`) is untouched; `trust/js/match.js` also exports `replayAgainst` (counterfactual scoring) and `encodeMatch`/`decodeMatch` (shareable `?replay=` URLs).
+
+Other view surfaces:
+- **summary** (`summary-view.js`): scrubbable replay strip, a counterfactual "road not taken" (all-share vs all-take bars), a prediction tally, and a "Share this game" button (copies a `?replay=` link).
+- **reveal** (`reveal-view.js`): faces morph into their true-form glyph one at a time; a "you played like X" card (`core/classify.js`); campaign-wide prediction reads.
+- **noise** (`noise-view.js`, `noise.css`): the "world is noisy" chapter — a scripted side-by-side showing strict Tit-for-Tat spiralling on one garbled signal while forgiving Tit-for-Two-Tats recovers.
+- **evolution** (`evolution-view.js`): standings rows show each strategy's face; the winner beams, the last-place sours.
+- **campaign-end**: a trust journal (one note per character), populated from `progress.campaign.journal`.
+
+Cross-campaign state in `progress.js`: `campaign.reads` (prediction accuracy) and `campaign.journal` accumulate across the run; intro cards show a **reputation** line + warier face when you've mostly defected so far (narrative only — strategies still can't see identity).
 
 Router note: `navigate(viewName)` already toggles `.active` and calls the view's `show*()`, so a `show*()` must not call `navigate(sameView)` again (it recurses). Views that re-enter (`showSummary`) guard on a required param; `showMap` simply doesn't re-navigate.
 
